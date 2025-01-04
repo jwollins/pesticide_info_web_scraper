@@ -5,18 +5,19 @@ setwd(dir = "~/OneDrive - Harper Adams University/")
 
 
 #*******************************************************************************
-## 01 Packages 
+# PACKAGES ####
+
+
 library(rvest)
 library(dplyr)
-library(dplyr)
-library(purrr)
+library(purrr) # For list filtering
+
 
 
 #*******************************************************************************
-## 02 SCRAPER FUNCTION ####
+# SCRAPER FUNCTIONS ####
 
-library(rvest)
-library(purrr) # For list filtering
+
 
 # Function to scrape "ENVIRONMENTAL FATE" section up to "ECOTOXICOLOGY"
 scrape_environmental_fate <- function(active_ingredient) {
@@ -25,9 +26,35 @@ scrape_environmental_fate <- function(active_ingredient) {
   
   # Add pesticide IDs
   pesticide_id <- switch(active_ingredient,
-                         "Folpet" = "354",
+                         "2-CEPA (Ethephon)" = "274",
                          "Azoxystrobin" = "123",
+                         "Bixafen" = "1250",
+                         "Boscalid" = "86",
+                         "Chlormequat" = "3210",
+                         "Chlorotoluron" = "151",
+                         "Clomazone" = "168",
+                         "Diflufenican" = "235",
+                         "Fenpicoxamid" = "3073",
+                         "Ferric Phosphate" = "1478",
+                         "Florasulam" = "322",
+                         "Flufenacet" = "331",
+                         "Fluopyram" = "1362",
+                         "Fluroxypyr" = "347",
+                         "Fluxapyroxad" = "2002",
+                         "Folpet" = "354",
+                         "Glyphosate" = "373",
+                         "Halauxifen-methyl" = "2630",
+                         "Imazamox" = "392",
+                         "Lambda-cyhalothrin" = "415",
+                         "Mefentrifluconazole" = "3098",
+                         "Pendimethalin" = "511",
+                         "Picloram" = "525",
+                         "Propaquizafop" = "546",
+                         "Prothioconazole" = "559",
+                         "Pyraclostrobin" = "564",
                          "Tebuconazole" = "610",
+                         "Tribenuron-methyl" = "655",
+                         "Trinexapac-ethyl" = "672",
                          NULL)
   
   if (is.null(pesticide_id)) {
@@ -87,18 +114,49 @@ scrape_environmental_fate <- function(active_ingredient) {
 # print(scraped_data)
 
 
+#*******************************************************************************
+# List treatment pesticides ####
+
+
+# List of active ingredients you want to scrape data for
+pesticides <- c("2-CEPA (Ethephon)",
+                "Azoxystrobin",
+                "Bixafen",
+                "Boscalid",
+                "Chlormequat",
+                "Chlorotoluron",
+                "Clomazone",
+                "Diflufenican",
+                "Fenpicoxamid",
+                "Ferric Phosphate",
+                "Florasulam",
+                "Flufenacet",
+                "Fluopyram",
+                "Fluroxypyr",
+                "Fluxapyroxad",
+                "Folpet",
+                "Glyphosate",
+                "Halauxifen-methyl",
+                "Imazamox",
+                "Lambda-cyhalothrin",
+                "Mefentrifluconazole",
+                "Pendimethalin",
+                "Picloram",
+                "Propaquizafop",
+                "Prothioconazole",
+                "Pyraclostrobin",
+                "Tebuconazole",
+                "Tribenuron-methyl",
+                "Trinexapac-ethyl")
 
 
 
 
 #*******************************************************************************
-## 03 RUN THE SCRAPER ####
+# RUN THE SCRAPER ####
 
 # Initialize an empty list to store data for all pesticides
 env_fate_list <- list()
-
-# List of active ingredients you want to scrape data for
-pesticides <- c("Folpet", "Azoxystrobin", "Tebuconazole")
 
 # Loop through each pesticide and scrape data
 for (pesticide in pesticides) {
@@ -149,10 +207,10 @@ print(names(env_fate_list$Tebuconazole))
 
 
 #*******************************************************************************
+# COLNAMES IN TIBBLES ####
+
 
 print(env_fate_list$Folpet[1])
-
-library(dplyr)
 
 # Apply the transformation to each tibble in env_fate_list
 env_fate_list <- lapply(env_fate_list, function(pesticide_tibble_list) {
@@ -179,32 +237,56 @@ print(env_fate_list$Folpet[["Degradation"]])
 
 
 #*******************************************************************************
-# EXTRACTION OF VARIABLE OF INTEREST 
+# EXTRACTION OF VARIABLE OF INTEREST ####
+
+
+#*******************************************************************************
+## degradation ####
 
 # Initialize an empty list to store the extracted data
-soil_degradation <- list()
+pesticide_degradation <- list()
 
 # Loop through each pesticide in the env_fate_list
 for (pesticide in names(env_fate_list)) {
   # Check if the "Degradation" section exists for the pesticide
   if ("Degradation" %in% names(env_fate_list[[pesticide]])) {
     # Extract the 4th row and first 4 columns from the "Degradation" tibble
-    degradation_rows <- env_fate_list[[pesticide]][["Degradation"]][2:8, 1:4]
+    degradation_rows <- env_fate_list[[pesticide]][["Degradation"]][,1:6]
     
     # Add the extracted row to the list, along with the pesticide name
-    soil_degradation[[pesticide]] <- degradation_rows
+    pesticide_degradation[[pesticide]] <- degradation_rows
   }
 }
 
 # Convert the list of extracted rows into a dataframe
-soil_degradation_df <- bind_rows(soil_degradation, .id = "Pesticide")
+pesticide_degradation_df <- bind_rows(pesticide_degradation, .id = "Pesticide")
+
+# Apply the new column names
+colnames(pesticide_degradation_df) <- c("Pesticide", "Property_1", "Property_2", 
+                                        "Property_3", "Value", "Source_quality_score", 
+                                        "Interpretation")
+
+
+
+
+#*******************************************************************************
+### soil degradation ####
+
+
 
 # View the resulting dataframe
+print(pesticide_degradation_df)
+
+soil_degradation_df <- filter(.data = pesticide_degradation_df, Property_1 == "Soil degradation (days) (aerobic)")
+soil_degradation_df <- filter(.data = soil_degradation_df, Property_2 != "Note")
 print(soil_degradation_df)
 
+soil_degradation_df$Value <- if_else(condition = soil_degradation_df$Value == "DT₅₀ (typical)", 
+                               true = soil_degradation_df$Source_quality_score, 
+                               false = soil_degradation_df$Value)
 
-
-
+# Check the updated dataframe
+print(soil_degradation_df)
 
 
 
