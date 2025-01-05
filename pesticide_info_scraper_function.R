@@ -11,6 +11,9 @@ setwd(dir = "~/OneDrive - Harper Adams University/")
 library(rvest)
 library(dplyr)
 library(purrr) # For list filtering
+library(stringr) # replace characters
+library(ggplot2) # plotting 
+library(tidyr)
 
 
 
@@ -26,7 +29,7 @@ scrape_environmental_fate <- function(active_ingredient) {
   
   # Add pesticide IDs
   pesticide_id <- switch(active_ingredient,
-                         "2-CEPA (Ethephon)" = "274",
+                         "2-chloroethylphosphonic acid" = "274",
                          "Azoxystrobin" = "123",
                          "Bixafen" = "1250",
                          "Boscalid" = "86",
@@ -185,24 +188,41 @@ desired_names <- c(
   "ENVIRONMENTAL FATE", 
   "Degradation", 
   "Soil adsorption and mobility", 
-  "Fate indices", 
-  "Known soil metabolites", 
-  "Other known metabolites"
+  "Fate indices"
 )
+
+# # Check the structure of 'Fenpicoxamid' in the list to understand how it is organized
+# str(env_fate_list$Diflufenican[2])
+# print(env_fate_list$Diflufenican[2])
+
+
+# # Check if the number of tibbles in 'Fenpicoxamid' matches the length of 'desired_names'
+# if (length(env_fate_list$Diflufenican) == length(desired_names)) {
+#   names(env_fate_list$Diflufenican) <- desired_names
+# }
+
+# # Check the names after applying
+# print(names(env_fate_list$Diflufenican))
+# 
+# 
+# print(env_fate_list$Diflufenican[2])
+# 
+# View(env_fate_list$Diflufenican[2])
 
 # Assign the desired names to each pesticide in the env_fate_list
 env_fate_list <- lapply(env_fate_list, function(pesticide_tibble_list) {
-  # Only apply the names if the list has the expected number of tibbles
+  # Check if the list of tibbles matches the expected number of desired names
   if (length(pesticide_tibble_list) == length(desired_names)) {
     names(pesticide_tibble_list) <- desired_names
   }
   return(pesticide_tibble_list)
 })
 
-# Check the names
-print(names(env_fate_list$Folpet))
-print(names(env_fate_list$Azoxystrobin))
-print(names(env_fate_list$Tebuconazole))
+# View(env_fate_list$Diflufenican["Degradation"])
+# 
+# # Check the names for one pesticide to verify
+# print(names(env_fate_list$Diflufenican))
+
 
 
 
@@ -210,7 +230,9 @@ print(names(env_fate_list$Tebuconazole))
 # COLNAMES IN TIBBLES ####
 
 
-print(env_fate_list$Folpet[1])
+# print(env_fate_list$Diflufenican[2])
+# 
+# View(env_fate_list$Diflufenican["Degradation"])
 
 # Apply the transformation to each tibble in env_fate_list
 env_fate_list <- lapply(env_fate_list, function(pesticide_tibble_list) {
@@ -227,11 +249,13 @@ env_fate_list <- lapply(env_fate_list, function(pesticide_tibble_list) {
   return(pesticide_tibble_list)
 })
 
-names(env_fate_list$Folpet)
-
-# Check the result for Folpet to confirm the transformation
-print(env_fate_list$Folpet[["Degradation"]])
-
+# colnames(env_fate_list$Diflufenican[2])
+# 
+# print(env_fate_list$Diflufenican[2])
+# 
+# View(env_fate_list$Diflufenican[2])
+# 
+# colnames(env_fate_list$Diflufenican["Degradation" ])
 
 
 
@@ -243,30 +267,82 @@ print(env_fate_list$Folpet[["Degradation"]])
 #*******************************************************************************
 ## degradation ####
 
-# Initialize an empty list to store the extracted data
-pesticide_degradation <- list()
 
-# Loop through each pesticide in the env_fate_list
-for (pesticide in names(env_fate_list)) {
-  # Check if the "Degradation" section exists for the pesticide
-  if ("Degradation" %in% names(env_fate_list[[pesticide]])) {
-    # Extract the 4th row and first 4 columns from the "Degradation" tibble
-    degradation_rows <- env_fate_list[[pesticide]][["Degradation"]][,1:6]
-    
-    # Add the extracted row to the list, along with the pesticide name
-    pesticide_degradation[[pesticide]] <- degradation_rows
-  }
-}
+# names(env_fate_list$Diflufenican)
+# 
+# print(env_fate_list$Diflufenican["Degradation"])
 
-# Convert the list of extracted rows into a dataframe
-pesticide_degradation_df <- bind_rows(pesticide_degradation, .id = "Pesticide")
+# Extract all 'Degradation' tibbles and bind them together
+pesticide_degradation_df <- env_fate_list %>%
+  map(~ .x[[2]]) %>%      # Extract the "Degradation" tibble from each pesticide
+  discard(is.null) %>%                 # Remove any NULL elements (if "Degradation" doesn't exist)
+  bind_rows(.id = "Pesticide")         # Bind them together and add a "Pesticide" column
 
-# Apply the new column names
+# # Print the resulting dataframe
+# print(pesticide_degradation_df)
+
+
+
+
+# set the column names here 
+
 colnames(pesticide_degradation_df) <- c("Pesticide", "Property_1", "Property_2", 
                                         "Property_3", "Value", "Source_quality_score", 
                                         "Interpretation")
 
 
+  
+  
+  
+  
+
+#*******************************************************************************
+# #*degradation old code problems!!!
+# # Initialize an empty list to store the extracted data
+# pesticide_degradation <- list()
+# 
+# # Loop through each pesticide in the env_fate_list
+# for (pesticide in names(env_fate_list)) {
+#   # Check if the "Degradation" section exists for the pesticide
+#   if ("Degradation" %in% names(env_fate_list[[pesticide]])) {
+#     # Extract the 4th row and first 4 columns from the "Degradation" tibble
+#     degradation_rows <- env_fate_list[[pesticide]][["Degradation"]]
+#     
+#     # Print the structure of the rows to inspect the data
+#     print(str(degradation_rows))
+#     
+#     # Add the extracted row to the list, along with the pesticide name
+#     pesticide_degradation[[pesticide]] <- degradation_rows
+#   }
+# }
+
+
+# print(pesticide_degradation$Diflufenican[2])
+# 
+# # Convert the list of extracted rows into a dataframe
+# pesticide_degradation_df <- bind_rows(pesticide_degradation, .id = "Pesticide")
+# 
+# print(pesticide_degradation$Diflufenican[4])
+# 
+# colnames(pesticide_degradation_df)
+# 
+# # Apply the new column names
+# colnames(pesticide_degradation_df) <- c("Pesticide", "Property_1", "Property_2", 
+#                                         "Property_3", "Value", "Source_quality_score", 
+#                                         "Interpretation")
+
+
+# # Now, use dplyr::select to keep the desired columns
+# library(dplyr)
+
+
+
+# drop some of the columns with no useful data 
+pesticide_degradation_df <- pesticide_degradation_df %>%
+  dplyr::select(Pesticide, Property_1, Property_2, Property_3, Value, Source_quality_score, Interpretation)
+
+# # View the updated data frame
+# print(pesticide_degradation_df)
 
 
 #*******************************************************************************
@@ -275,18 +351,241 @@ colnames(pesticide_degradation_df) <- c("Pesticide", "Property_1", "Property_2",
 
 
 # View the resulting dataframe
-print(pesticide_degradation_df)
+# print(pesticide_degradation_df)
 
+# filter to just the soil data 
 soil_degradation_df <- filter(.data = pesticide_degradation_df, Property_1 == "Soil degradation (days) (aerobic)")
-soil_degradation_df <- filter(.data = soil_degradation_df, Property_2 != "Note")
-print(soil_degradation_df)
 
+# print(soil_degradation_df)
+
+# remove any of the "note" rows
+soil_degradation_df <- filter(.data = soil_degradation_df, Property_2 != "Note")
+
+# there are some duplicated columns which move the "value" col. Remove duplicates and set to "value"
 soil_degradation_df$Value <- if_else(condition = soil_degradation_df$Value == "DT₅₀ (typical)", 
                                true = soil_degradation_df$Source_quality_score, 
                                false = soil_degradation_df$Value)
 
-# Check the updated dataframe
-print(soil_degradation_df)
+
+# Merge Property_1, Property_2, and Property_3 into one column for better info
+soil_degradation_df <- soil_degradation_df %>%
+  unite("Property", Property_1, Property_2, Property_3, sep = " ", remove = TRUE)
+
+
+
+
+#*******************************************************************************
+# Pivot the dataframe for merging
+
+# Explicitly use dplyr's select function to remove the unwanted columns
+soil_degradation_df <- dplyr::select(soil_degradation_df, -Source_quality_score, -Interpretation)
+
+glimpse(soil_degradation_df)
+
+# Now proceed with reshaping the data
+soil_degradation_df_wide <- soil_degradation_df %>%
+  pivot_wider(names_from = Property, values_from = Value)
+
+# # View the reshaped dataframe
+# glimpse(soil_degradation_df_wide)
+
+
+
+
+
+#*******************************************************************************
+# TREATEMENTS ####
+
+# read application data in 
+usage_dat <- read.csv(file = "~/OneDrive - Harper Adams University/Data/LCA/data/processed_data/summary_normalised_LCA_data.csv")
+
+# glimpse(usage_dat)
+# 
+# # View the reshaped dataframe
+# glimpse(soil_degradation_df_wide)
+
+
+
+# Assuming Pesticide in soil_degradation_df corresponds to ai_name in usage_dat
+combined_dat <- usage_dat %>%
+  left_join(soil_degradation_df_wide, by = c("ai_name" = "Pesticide"))
+
+# # Check the structure of the combined dataframe
+# glimpse(combined_dat)
+
+# remove "-" character and set to NA
+combined_dat <- combined_dat %>%
+  mutate(across(where(is.character), ~na_if(., "-")))
+
+# remove any symbols 
+combined_dat <- combined_dat %>%
+  mutate(across(where(is.character), ~str_replace(., ">1000", "1000")))
+
+# set cols as numeric cols
+combined_dat <- combined_dat %>%
+  mutate(across(8:13, ~as.numeric(.), .names = "{col}"))
+
+
+
+#*******************************************************************************
+# PLOTS ####
+
+
+#*******************************************************************************
+## general soil half life plot ####
+
+# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
+a <- ggplot(combined_dat, 
+            aes(x = ai_name, 
+                y = `Soil degradation (days) (aerobic) Soil degradation (days) (aerobic) DT₅₀ (typical)`, 
+             fill = ai_name)) +
+  geom_col() +  # Use geom_col() when you already have the values
+  theme_minimal() +
+   ylim(0,800) +
+  labs(
+    title = expression("Typical" ~ DT[50] ~ "(days)"),
+    x = "Pesticide Active Ingrdient",
+    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
+    fill = "Active Ingrdient"
+  ) +
+  theme(
+    axis.text.x = element_blank(),  # Remove x-axis labels
+    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
+  )
+  # theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
+
+a
+
+# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
+b <- ggplot(combined_dat, 
+       aes(x = ai_name, 
+           y = `Soil degradation (days) (aerobic) DT₅₀ (field) DT₅₀ (field)`, 
+        fill = ai_name)) +
+  geom_col() +  # Use geom_col() when you already have the values
+  theme_minimal() + 
+  ylim(0,800) +
+  labs(
+    title = expression("Field" ~ DT[50] ~ "(days)"),
+    x = "Pesticide Active Ingrdient",
+    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
+    fill = "Active Ingrdient"
+  ) +
+  theme(
+    axis.text.x = element_blank(),  # Remove x-axis labels
+    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
+  )
+  # theme(axis.text.x = element_text(angle = -45, hjust = 0, size = 6))  # Rotate x-axis labels if necessary
+
+b
+
+ggsave(filename = "Data/agronomy/plots/ai_degradation_soil.png", width = 10, height = 4)
+
+
+# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
+c <- ggplot(combined_dat, aes(x = ai_name, 
+                         y = `Soil degradation (days) (aerobic) DT₅₀ (lab at 20 °C) DT₅₀ (lab at 20 °C)`, 
+                         fill = ai_name)) +
+  geom_col() +  # Use geom_col() when you already have the values
+  theme_minimal() +
+  ylim(0,800) +
+  labs(
+    title = expression("Lab at 20 °C" ~ DT[50] ~ "(days)"),
+    x = "Pesticide Active Ingrdient",
+    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
+    fill = "Active Ingrdient"
+  ) +
+  theme(
+    axis.text.x = element_blank(),  # Remove x-axis labels
+    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
+  )
+  # theme(axis.text.x = element_text(angle = -45, hjust = 0,))  # Rotate x-axis labels if necessary
+
+c
+
+ggarrange(a,b,c, 
+          ncol = 3, 
+          nrow = 1, 
+          labels = c("A","B","C"), 
+          common.legend = TRUE, 
+          legend = "bottom", align = "h")
+
+ggsave(filename = "Data/agronomy/plots/ai_soil_degradation_all.png", width = 12, height = 5.5)
+
+
+
+
+
+#*******************************************************************************
+## by treatment ####
+
+
+b <- ggplot(combined_dat, 
+            aes(x = ai_name, 
+                y = `Soil degradation (days) (aerobic) DT₅₀ (field) DT₅₀ (field)`, 
+                fill = ai_name)) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = expression("Field" ~ DT[50] ~ "(days)"),
+    x = "Pesticide Active Ingredient",
+    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
+    fill = "Active Ingredient"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = -45, hjust = 0, size = 6)  # Rotate x-axis labels
+  ) +
+  facet_wrap(~ treatment)  # Facet by the treatment column
+
+
+b
+
+# ggsave(filename = "Data/agronomy/plots/ai_degradation_soil.png", width = 10, height = 4)
+
+
+combined_dat$avg_normalized_rate_kg_ha
+
+
+
+
+## metric approach 
+
+combined_dat <- combined_dat %>%
+  mutate(rate_dt50 = avg_normalized_rate_kg_ha * `Soil degradation (days) (aerobic) DT₅₀ (field) DT₅₀ (field)`)
+
+ggplot(combined_dat, 
+       aes(x = ai_name, 
+           y = rate_dt50, 
+           fill = ai_name)) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = expression("Pesticide Degradation Load (Rate x " ~ DT[50] ~ ")"),
+    x = "Pesticide Active Ingredient",
+    y = expression("Degradation Load (Rate x " ~ DT[50] ~ ")"),
+    fill = "Active Ingredient"
+  ) +
+  theme(axis.text.x = element_text(angle = -45, hjust = 0, size = 6)) +
+  facet_wrap(~ treatment)
+
+
+
+
+combined_dat <- combined_dat %>%
+  mutate(normalized_dt50 = `Soil degradation (days) (aerobic) DT₅₀ (field) DT₅₀ (field)` / avg_normalized_rate_kg_ha)
+
+pca <- prcomp(combined_dat[, c("avg_normalized_rate_kg_ha", "Soil degradation (days) (aerobic) DT₅₀ (field) DT₅₀ (field)")], 
+              scale. = TRUE)
+summary(pca)
+
+
+
+
+
+
+
+
+
+
 
 
 
