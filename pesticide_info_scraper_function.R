@@ -5,7 +5,7 @@ setwd(dir = "~/OneDrive - Harper Adams University/")
 
 getwd()
 
-#*******************************************************************************
+#*******************************************************************************####
 # PACKAGES ####
 
 
@@ -19,9 +19,9 @@ library(ggpubr)
 
 
 
-#*******************************************************************************
+#*******************************************************************************####
 # ENV FATE SCRAPER ####
-
+#*******************************************************************************####
 
 
 scrape_all_tables <- function(active_ingredient) {
@@ -138,9 +138,9 @@ pesticides <- c("2-CEPA (Ethephon)",
 
 
 
-#*******************************************************************************
+#*******************************************************************************####
 # RUN THE SCRAPER ####
-
+#*******************************************************************************####
 
 
 # run the scraper 
@@ -235,9 +235,9 @@ print(fate_indicies_list$Florasulam[21])
 
 
 
-#*******************************************************************************
+#*******************************************************************************####
 # COMBINE DATA FROM SINGLE VARIABLES ####
-
+#*******************************************************************************####
 
 # Combine all "Fate indices" tibbles into a single data frame
 
@@ -316,8 +316,10 @@ colnames(env_degration_df) <- make.names(colnames(env_degration_df), unique = TR
 
 
 
-#*******************************************************************************
+#*******************************************************************************####
 ## EXRACT DATA FROM METADATA ####
+#*******************************************************************************####
+
 
 ## ~~ GUS leaching ####
 
@@ -392,12 +394,52 @@ print(fish_lc50)
 
 
 
+# ~~~~~~~~~~~ ####
+# ~ beneficials ####
+
+
+unique(pesticide_fate_df$Property_1)
+
+
+
+## ~~ lacewings ####
+
+lacewings_lr50 <- pesticide_fate_df %>%
+  filter(Property_1 == "Beneficial insects (Lacewings) as Mortality LR₅₀ g ha⁻¹")
+
+# View the result
+print(lacewings_lr50)
+
+
+
+## ~~ Parasitic wasps ####
+
+paris_wasps_lr50 <- pesticide_fate_df %>%
+  filter(Property_1 == "Beneficial insects (Parasitic wasps) as Mortality LR₅₀ g ha⁻¹")
+
+# View the result
+print(paris_wasps_lr50)
+
+
+
+## ~~ Predatory mites ####
+
+pred_mites_lr50 <- pesticide_fate_df %>%
+  filter(Property_1 == "Beneficial insects (Predatory mites) as Mortality LR₅₀ g ha⁻¹")
+
+# View the result
+print(pred_mites_lr50)
 
 
 
 
 
+
+
+# ~~~~~~~~~~~ ####
 # ~ Degradation ####
+
+
 
 
 ## ~~ Soil degradation (days) (typical) ####
@@ -742,13 +784,13 @@ print(soil_dt50_lab)
 
 
 
-#*******************************************************************************
+#*******************************************************************************####
 # PIVOT DFS ####
 
 # Pivot the dataframe for merging
 
 
-#*******************************************************************************
+#*******************************************************************************####
 ## ~ ENV FATE PIVOT ####
 
 
@@ -1014,6 +1056,27 @@ GUS_leaching_potential_index <- GUS_leaching_potential_index %>%
 
 
 
+### ~~ lacewings ####
+
+print(lacewings_lr50)
+
+# Merge Property_1, Property_2, and Property_3 into one column for better info
+lacewings_lr50 <- lacewings_lr50 %>%
+  unite("Property", Property_1, Property_2, Property_3, sep = " ", remove = TRUE)
+
+colnames(lacewings_lr50)
+
+# Remove unwanted columns
+lacewings_lr50 <- lacewings_lr50 %>%
+  select(-Interpretation, -`NA.`, -`NA..1`, -`NA..2`, -`NA..3`,
+         -`NA..4`, -`NA..5`, -`NA..6`, -`NA..7`, 
+         -`NA..8`, -`NA..9`, -`NA..10`, -`NA..11`, -`NA..12`,
+         -`NA..13`, -`NA..14`, -`NA..15`, -`NA..16`, -`NA..17`, -`NA..18`,
+         -`NA..19`, -`NA..20`, -`NA..21`)
+
+# Now proceed with reshaping the data
+lacewings_lr50 <- lacewings_lr50 %>%
+  pivot_wider(names_from = Property, values_from = Value_2)
 
 
 
@@ -1021,9 +1084,10 @@ GUS_leaching_potential_index <- GUS_leaching_potential_index %>%
 
 
 
-#*******************************************************************************
+
+#*******************************************************************************####
 # JOIN DATA ####
-
+#*******************************************************************************####
 
 ### ~~ load data ####
 
@@ -1101,8 +1165,10 @@ combined_dat <- combined_dat %>%
 
 
 
-#*******************************************************************************
+#*******************************************************************************####
 # CALCULATE LOAD INDEXS ####
+#*******************************************************************************####
+
 
 # add equation parameters
 application_rate <- combined_dat$sum_normalized_rate_kg_ha
@@ -1119,6 +1185,10 @@ combined_dat$pesticide_load_index <- application_rate * (DT50 / LD50)
 
 combined_dat$toxic_load_index <- application_rate * (1 / LD50)
 
+
+## ~ GUS ####
+
+combined_dat$gus_risk_index <- application_rate * combined_dat$`GUS leaching potential index GUS leaching potential index GUS leaching potential index`
 
 ## ~ worm risk index ####
 
@@ -1143,15 +1213,16 @@ combined_dat$birds_risk_index <- application_rate / combined_dat$`Birds - Acute 
 combined_dat$fish_risk_index <- application_rate / combined_dat$`Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹) Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹) Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹)`
 
 
-#*******************************************************************************
+#*******************************************************************************####
 # SAVE DATA ####
 
 write.csv(x = combined_dat, file = "Data/agronomy/data/pesticide_data/pesticide_properties_data.csv")
 
 
 
-#*******************************************************************************
+#*******************************************************************************####
 # SUMMARY TABLES ####
+#*******************************************************************************####
 
 
 ## ~ PLI ####
@@ -1223,12 +1294,12 @@ mammal_risk_index_sum <- combined_dat %>%
   )
 
 ## ~ bee risk index ####
-collembola_risk_index_sum <- combined_dat %>%
-  group_by(treatment, year) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(collembola_risk_index, na.rm = TRUE), digits = 4)
-  )
+# collembola_risk_index_sum <- combined_dat %>%
+#   group_by(treatment, year) %>%
+#   summarise(
+#     n = n(),
+#     sum = round(x = sum(collembola_risk_index, na.rm = TRUE), digits = 4)
+#   )
 
 ## ~ birds risk index ####
 birds_risk_index_sum <- combined_dat %>%
@@ -1257,18 +1328,19 @@ GUS_index_sum <- combined_dat %>%
   group_by(treatment, year) %>%
   summarise(
     n = n(),
-    sum = round(x = sum(`GUS leaching potential index GUS leaching potential index GUS leaching potential index`, na.rm = TRUE), digits = 4)
+    sum = round(x = sum(gus_risk_index, na.rm = TRUE), digits = 4)
   )
 
 
 
 
 
-#*******************************************************************************
+#*******************************************************************************####
 # PLOTS ####
 
 
-#*******************************************************************************
+#*******************************************************************************####
+# ~~~~~~~~~~~ ####
 ## ~ soil DT50 plots ####
 
 
@@ -1391,6 +1463,7 @@ ggplot(combined_dat, aes(x = ai_name,
 
 
 #*******************************************************************************
+# ~~~~~~~~~~~ ####
 ## ~ TOXICITY ####
 
 
@@ -1450,9 +1523,108 @@ b
 
 
 
+### ~~ birds ####
+
+# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
+c <- ggplot(combined_dat, 
+            aes(x = ai_name, 
+                y = `Birds - Acute LD₅₀ (mg kg⁻¹) Birds - Acute LD₅₀ (mg kg⁻¹) Birds - Acute LD₅₀ (mg kg⁻¹)`, 
+                fill = ai_name)) +
+  geom_col() +  # Use geom_col() when you already have the values
+  theme_minimal() +
+  # ylim(0,800) +
+  labs(
+    title = expression("Birds - Acute" ~ LD[50] ~ (mg ~ kg^{-1})),
+    x = "Pesticide Active Ingrdient",
+    y = expression(LD[50] ~ (mg ~ kg^{-1})),
+    fill = "Active Ingrdient"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_blank(),  # Remove x-axis labels
+    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
+  )
+# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
+
+c
+
+### ~~ fish ####
+
+# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
+d <- ggplot(combined_dat, 
+            aes(x = ai_name, 
+                y = `Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹) Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹) Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹)`, 
+                fill = ai_name)) +
+  geom_col() +  # Use geom_col() when you already have the values
+  theme_minimal() +
+  # ylim(0,800) +
+  labs(
+    title = expression("Freshwater Fish - Acute 96 hr" ~ LC[50] ~ (mg ~ l^{-1})),
+    x = "Pesticide Active Ingrdient",
+    y = expression(LC[50] ~ (mg ~ l^{-1})),
+    fill = "Active Ingrdient"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_blank(),  # Remove x-axis labels
+    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
+  )
+# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
+
+d
+
+
+### ~~ Bees ####
+
+# Plot title using expression
+plot_title <- expression(
+  "Honeybees (" * italic("Apis spp.") * ") Contact acute LD" [50] *
+    " (" * mu * "g bee" ^ -1 * ")"
+)
+
+# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
+e <- ggplot(combined_dat, 
+            aes(x = ai_name, 
+                y = `Honeybees (Apis spp.) Honeybees (Apis spp.) Contact acute LD₅₀ (worst case from 24, 48 and 72 hour values - μg bee⁻¹)`, 
+                fill = ai_name)) +
+  geom_col() +  # Use geom_col() when you already have the values
+  theme_minimal() +
+  # ylim(0,800) +
+  labs(
+    title = plot_title,
+    x = "Pesticide Active Ingrdient",
+    y = expression(
+      "LD" [50] *
+        " (" * mu * "g bee" ^ -1 * ")"
+    ),
+    fill = "Active Ingrdient"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_blank(),  # Remove x-axis labels
+    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
+  )
+# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
+
+e
+
+
+
+ggarrange(a,b,c,d,e, 
+          ncol = 3, 
+          nrow = 2, 
+          common.legend = TRUE, 
+          legend = "bottom", 
+          labels = c("A","B","C","D","E"))
+
+ggsave(filename = "Data/agronomy/plots/fig_ecotox_pesticide_values.png", width = 13, height = 8)
+
+
 
 #*******************************************************************************
+# ~~~~~~~~~~~ ####
 ## ~ by treatment ####
+
 
 
 ### ~~ degradation in soil ####
@@ -1533,6 +1705,13 @@ ggplot(combined_dat,
 ggsave(filename = "Data/agronomy/plots/pesticide_load_index.png", width = 10, height = 5)
 
 
+
+
+
+
+
+
+## ~ PLI PLOT ####
 
 # plot PLI by treatment and year
 pli_plot <-
@@ -1627,7 +1806,28 @@ ggsave(filename = "Data/agronomy/plots/toxic_load_index.png", width = 10, height
 
 
 
-# plot PLI by treatment and year
+
+
+
+
+
+
+
+
+
+#*******************************************************************************####
+# BARPLOTS ####
+
+
+#******************************************************************************####
+# ~~~~~~~~~~~ ####
+## ~ general indexes by treatment year ####
+
+
+
+### ~~ TLI barplots ####
+
+# plot TLI by treatment and year
 tli_plot <-
   ggplot(data = tli_sum, 
          aes(x = treatment, 
@@ -1656,6 +1856,8 @@ tli_plot <-
 
 tli_plot
 
+
+### ~~ PLI barplots ####
 
 # plot PLI by treatment and year
 pli_plot <-
@@ -1688,7 +1890,7 @@ pli_plot
 
 
 
-## ~ GUS index ####
+### ~~ GUS index ####
 
 # plot worm index by treatment and year
 gus_plot <-
@@ -1735,11 +1937,16 @@ ggsave(filename = "Data/agronomy/plots/pli_tli_gus.png", width = 10, height = 4)
 
 
 
+
+
+
+
 #******************************************************************************
-## ~~ eco risk plot by treatment x year ####
+# ~~~~~~~~~~~ ####
+## ~ eco risk plot by treatment x year ####
 
 
-## ~ worm risk index ####
+### ~~ worm risk index ####
 
 # plot worm index by treatment and year
 worm_plot <-
@@ -1771,7 +1978,7 @@ worm_plot <-
 worm_plot
 
 
-## ~ mammal risk index ####
+### ~~ mammal risk index ####
 
 # plot worm index by treatment and year
 mammal_plot <-
@@ -1804,38 +2011,38 @@ mammal_plot
 
 
 
-## ~ collembola risk index ####
+### ~~ collembola risk index ####
 
-# plot worm index by treatment and year
-collembola_plot <-
-  ggplot(data = collembola_risk_index_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    subtitle = "Collembola Risk Index",
-    x = "Treatment",
-    y = "Risk Index",
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-collembola_plot
+# # plot worm index by treatment and year
+# collembola_plot <-
+#   ggplot(data = collembola_risk_index_sum, 
+#          aes(x = treatment, 
+#              y = sum, 
+#              fill = treatment)) + 
+#   geom_bar(stat = "identity", 
+#            color = "black", 
+#            position = "dodge") + 
+#   labs(
+#     subtitle = "Collembola Risk Index",
+#     x = "Treatment",
+#     y = "Risk Index",
+#     caption = "") +
+#   theme_bw() +
+#   scale_fill_manual(values=c("turquoise3","tomato2"), 
+#                     name = "Treatment") +
+#   theme(strip.text.x = element_text(size = 12, 
+#                                     color = "black", 
+#                                     face = "bold.italic"), 
+#         legend.position = "bottom", 
+#         axis.text.x = element_blank(), 
+#         axis.title.x = element_blank()) +
+#   facet_wrap(~ year, 
+#              ncol = 4, 
+#              scales = 'free_x') 
+# collembola_plot
 
 
-## ~ birds risk index ####
+### ~~ birds risk index ####
 
 # plot worm index by treatment and year
 birds_plot <-
@@ -1867,9 +2074,12 @@ birds_plot
 
 
 
-## ~ bee risk index ####
+### ~~ bee risk index ####
 
 names(bees_ld50)
+
+# Plot title using expression
+plot_title <- expression("Honey Bee (" * italic("Apis spp.") * ") Risk Index")
 
 # plot worm index by treatment and year
 bee_plot <-
@@ -1881,7 +2091,7 @@ bee_plot <-
            color = "black", 
            position = "dodge") + 
   labs(
-    subtitle = "Honey Bee (Apis spp.) Risk Index",
+    subtitle = plot_title,
     x = "Treatment",
     y = "Risk Index",
     caption = "") +
@@ -1900,7 +2110,7 @@ bee_plot <-
 bee_plot
 
 
-## ~ fish risk index ####
+### ~~ fish risk index ####
 
 names(fish_lc50)
 
@@ -1933,7 +2143,7 @@ fish_plot <-
 fish_plot
 
 
-ggarrange(worm_plot, collembola_plot, bee_plot, mammal_plot, birds_plot, fish_plot, 
+ggarrange(worm_plot, bee_plot, mammal_plot, birds_plot, fish_plot, 
           ncol = 3, 
           nrow = 2, 
           common.legend = TRUE, 
