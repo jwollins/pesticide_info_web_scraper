@@ -8,23 +8,36 @@ output: pdf_document
 # Pesticide Risk Plots
 
 
-
-Set the working directory
+Set the working directory and load the necessary packages
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 # Set the root directory for the R Markdown file
 knitr::opts_knit$set(root.dir = "~/OneDrive - Harper Adams University/Data/agronomy/")
+
+
+# PACKAGES ####
+
+library(dplyr)
+library(purrr) # For list filtering
+library(stringr) # replace characters
+library(ggplot2) # plotting 
+library(tidyr)
+library(ggpubr)
 ```
+
+
 
 
 ## Data 
 
 Read the combined data set
 
-```{r}
-combined_dat <- read.csv(file = "data/pesticide_data/pesticide_properties_data.csv")
+```{r load data}
+#combined_dat <- read.csv(file = "data/pesticide_data/pesticide_properties_data.csv")
+
+source(file = "~/Documents/GitHub/pesticide_info_web_scraper/pesticide_risk_summary_stats.R")
 
 ```
 
@@ -103,9 +116,11 @@ soil_c <- ggplot(combined_dat, aes(x = ai_name,
 
 ```
 
+
+
 Create the joint plot of Soil degradation half life
 
-```{r}
+```{r soil dt50 combination plot}
 
 ggarrange(soil_a,soil_b,soil_c, 
           ncol = 3, 
@@ -115,16 +130,18 @@ ggarrange(soil_a,soil_b,soil_c,
           legend = "bottom", align = "h")
 ```
 
-```{r}
+```{r save dt50 combo plot}
 ggsave(filename = "plots/pesticide_risk_plots/ai_soil_degradation_all.png", width = 10, height = 5.5)
 
 ```
 
 
 
+
+
 ## Leaching potential
 
-```{r pressure, echo=FALSE}
+```{r , echo=FALSE}
 ## ~ leaching potential ####
 
 gus <- ggplot(combined_dat, aes(x = ai_name, 
@@ -151,9 +168,14 @@ gus <- ggplot(combined_dat, aes(x = ai_name,
 
 
 
-# TOXICITY
 
-```{r}
+#******************************************************************************####
+# TOXICITY by AI
+#******************************************************************************####
+
+
+
+```{r ecotoxicity by AI}
 
 #*******************************************************************************
 ### ~~ mammals ####
@@ -300,7 +322,7 @@ e
 
 ## ~ Combined Toxicity plot 
 
-```{r}
+```{r combo ecotox plot}
 ggarrange(a,b,c,d,e, 
           ncol = 3, 
           nrow = 2, 
@@ -310,13 +332,13 @@ ggarrange(a,b,c,d,e,
 
 ```
 
-```{r}
+```{r save combo ecotox plot}
 ggsave(filename = "plots/pesticide_risk_plots/fig_ecotox_pesticide_values.png", width = 13, height = 8)
 
 ```
 
 
-```{r}
+```{r combo larger plot}
 
 ggarrange(soil_a, soil_b, soil_c, gus,
   a,b,c,d,e, 
@@ -332,11 +354,12 @@ ggsave(filename = "plots/pesticide_risk_plots/fig_all_ecotox_pesticide_values.pn
 
 ```
 
+
+
+
 ## ~ by treatment
 
-```{r}
-
-
+```{r plot by treatment}
 
 
 ### ~~ degradation in soil ####
@@ -393,113 +416,15 @@ ggplot(combined_dat,
 
 
 
-```{r}
-
-## ~ PLI PLOT ####
-
-# plot PLI by treatment and year
-pli_plot <-
-  ggplot(data = pli_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    x = "Treatment",
-    y = "Pesticide Load Index (PLI)",
-    subtitle = "Pesticide Load Index (PLI)", 
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-
-pli_plot
-
-
-
-
-
-#*******************************************************************************
-## ~ mammal ecotox ####
-
-
-
-a <- ggplot(combined_dat, 
-            aes(x = ai_name, 
-                y = Mammals...Acute.oral.LD....mg.kg....Mammals...Acute.oral.LD....mg.kg....Mammals...Acute.oral.LD....mg.kg..., 
-                fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  # ylim(0,800) +
-  labs(
-    title = expression("Mammal Acute Oral" ~ LD[50] ~ (mg ~ kg^{-1})),
-    x = "Pesticide Active Ingrdient",
-    y = expression(LD[50] ~ (mg ~ kg^{-1})),
-    fill = "Active Ingrdient"
-  ) +
-  theme_classic() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
-# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
-
-a
-
-
-
-
-
-
-
-#*******************************************************************************
-## ~ TLI plots ####
-
-
-# plot TLI for each AI x treatment
-ggplot(combined_dat, 
-       aes(x = ai_name, 
-           y = toxic_load_index, 
-           fill = ai_name)) +
-  geom_col() +
-  theme_classic() +
-  labs(
-    title = expression("Toxic Load Index (TLI)"),
-    x = "Pesticide Active Ingredient",
-    y = expression("TLI"),
-    fill = "Active Ingredient"
-  ) +
-  theme(
-    panel.border = element_rect(color = "black", fill = NA, size = 1),
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()) +
-  facet_wrap(~ treatment)
-
-#ggsave(filename = "Data/agronomy/plots/toxic_load_index.png", width = 10, height = 5)
-
-
-```
-
-
 
 #*******************************************************************************####
-# BARPLOTS ####
-
-
+# BARPLOTS
 #******************************************************************************####
-# ~~~~~~~~~~~ ####
-## ~ general indexes by treatment year ####
+
+
+
+
+## ~ general indexes by treatment year
 
 
 ```{r}
@@ -616,7 +541,7 @@ ggarrange(pli_plot, tli_plot, gus_plot,
 ```
 
 
-## ~~ save PLI, TLI, AND GUS PLOT
+save PLI, TLI, AND GUS PLOT
 
 ```{r}
 ggsave(filename = "plots/pesticide_risk_plots/pli_tli_gus.png", width = 10, height = 4)
