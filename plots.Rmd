@@ -30,7 +30,7 @@ library(ggpubr)
 
 
 
-## Data 
+# Data 
 
 Read the combined data set
 
@@ -44,7 +44,7 @@ source(file = "~/Documents/GitHub/pesticide_info_web_scraper/pesticide_risk_summ
 
 
 
-## soil DT50 plots 
+# DT50 & GUS plots 
 
 
 ```{r soil DT50 plots}
@@ -52,17 +52,17 @@ source(file = "~/Documents/GitHub/pesticide_info_web_scraper/pesticide_risk_summ
 ### ~~ general soil half life plot ####
 
 # Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-soil_a <- ggplot(combined_dat, 
+gus_plot <- ggplot(combined_dat, 
             aes(x = ai_name, 
-                y = Soil.degradation..days...aerobic..Soil.degradation..days...aerobic..DT....typical., 
+                y = GUS.leaching.potential.index.GUS.leaching.potential.index.GUS.leaching.potential.index, 
                 fill = ai_name)) +
   geom_col() +  # Use geom_col() when you already have the values
   theme_minimal() +
-  ylim(0,800) +
+  ylim(0,10) +
   labs(
-    title = expression("Typical" ~ DT[50] ~ "(days)"),
+    title = "Groundwater Ubiquity Score (GUS)",
     x = "Pesticide Active Ingrdient",
-    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
+    y = "GUS",
     fill = "Active Ingrdient"
   ) +
   theme_classic() +
@@ -74,7 +74,7 @@ soil_a <- ggplot(combined_dat,
 
 
 # Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-soil_b <- ggplot(combined_dat, 
+soil_dt50 <- ggplot(combined_dat, 
             aes(x = ai_name, 
                 y = Soil.degradation..days...aerobic..DT....field..DT....field., 
                 fill = ai_name)) +
@@ -82,9 +82,9 @@ soil_b <- ggplot(combined_dat,
   theme_minimal() + 
   ylim(0,800) +
   labs(
-    title = expression("Field" ~ DT[50] ~ "(days)"),
+    y = expression("Field" ~ DT[50] ~ "(days)"),
     x = "Pesticide Active Ingrdient",
-    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
+    title = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
     fill = "Active Ingrdient"
   ) +
   theme_classic() +
@@ -93,25 +93,6 @@ soil_b <- ggplot(combined_dat,
     axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
   )
 
-
-# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-soil_c <- ggplot(combined_dat, aes(x = ai_name, 
-                              y = Soil.degradation..days...aerobic..DT....lab.at.20..C..DT....lab.at.20..C., 
-                              fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  ylim(0,800) +
-  labs(
-    title = expression("Lab at 20 °C" ~ DT[50] ~ "(days)"),
-    x = "Pesticide Active Ingrdient",
-    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
-    fill = "Active Ingrdient"
-  ) +
-  theme_classic() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
 
 
 ```
@@ -122,16 +103,17 @@ Create the joint plot of Soil degradation half life
 
 ```{r soil dt50 combination plot}
 
-ggarrange(soil_a,soil_b,soil_c, 
-          ncol = 3, 
+ggarrange(soil_dt50, gus_plot, 
+          ncol = 2, 
           nrow = 1, 
-          labels = c("A","B","C"), 
+          labels = c("A","B"), 
           common.legend = TRUE, 
           legend = "bottom", align = "h")
 ```
 
 ```{r save dt50 combo plot}
-ggsave(filename = "plots/pesticide_risk_plots/ai_soil_degradation_all.png", width = 10, height = 5.5)
+ggsave(filename = "~/OneDrive - Harper Adams University/Data/agronomy/plots/pesticide_risk_plots/fig_field_dt50_gus_plot.png", 
+       width = 10, height = 5.5)
 
 ```
 
@@ -139,45 +121,16 @@ ggsave(filename = "plots/pesticide_risk_plots/ai_soil_degradation_all.png", widt
 
 
 
-## Leaching potential
-
-```{r , echo=FALSE}
-## ~ leaching potential ####
-
-gus <- ggplot(combined_dat, aes(x = ai_name, 
-                         y = GUS.leaching.potential.index.GUS.leaching.potential.index.GUS.leaching.potential.index, 
-                         fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  ylim(0,9) +
-  labs(
-    title = "GUS Leaching Potential",
-    x = "Pesticide Active Ingrdient",
-    y = "GUS Leaching Potential",
-    fill = "Active Ingrdient"
-  ) +
-  theme_classic() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
 
 
 
-```
-
-
-
-
-#******************************************************************************####
+#____________________________________________________________####
 # TOXICITY by AI
-#******************************************************************************####
 
 
 
 ```{r ecotoxicity by AI}
 
-#*******************************************************************************
 ### ~~ mammals ####
 
 # Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
@@ -194,7 +147,7 @@ a <- ggplot(combined_dat,
     y = expression(LD[50] ~ (mg ~ kg^{-1})),
     fill = "Active Ingrdient"
   ) +
-  theme_classic() +
+  theme_bw() +
   theme(
     axis.text.x = element_blank(),  # Remove x-axis labels
     axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
@@ -222,7 +175,7 @@ b <- ggplot(combined_dat,
     y = expression(LD[50] ~ (mg ~ kg^{-1})),
     fill = "Active Ingrdient"
   ) +
-  theme_classic() +
+  theme_bw() +
   theme(
     axis.text.x = element_blank(),  # Remove x-axis labels
     axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
@@ -249,7 +202,7 @@ c <- ggplot(combined_dat,
     y = expression(LD[50] ~ (mg ~ kg^{-1})),
     fill = "Active Ingrdient"
   ) +
-  theme_classic() +
+  theme_bw() +
   theme(
     axis.text.x = element_blank(),  # Remove x-axis labels
     axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
@@ -274,7 +227,7 @@ d <- ggplot(combined_dat,
     y = expression(LC[50] ~ (mg ~ l^{-1})),
     fill = "Active Ingrdient"
   ) +
-  theme_classic() +
+  theme_bw() +
   theme(
     axis.text.x = element_blank(),  # Remove x-axis labels
     axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
@@ -309,7 +262,7 @@ e <- ggplot(combined_dat,
     ),
     fill = "Active Ingrdient"
   ) +
-  theme_classic() +
+  theme_bw() +
   theme(
     axis.text.x = element_blank(),  # Remove x-axis labels
     axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
@@ -317,6 +270,9 @@ e <- ggplot(combined_dat,
 # theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
 
 e
+
+
+
 
 ```
 
@@ -333,7 +289,8 @@ ggarrange(a,b,c,d,e,
 ```
 
 ```{r save combo ecotox plot}
-ggsave(filename = "plots/pesticide_risk_plots/fig_ecotox_pesticide_values.png", width = 13, height = 8)
+ggsave(filename = "~/OneDrive - Harper Adams University/Data/agronomy/plots/pesticide_risk_plots/fig_ecotox_pesticide_values.png", 
+       width = 13, height = 8)
 
 ```
 
@@ -357,69 +314,10 @@ ggsave(filename = "plots/pesticide_risk_plots/fig_all_ecotox_pesticide_values.pn
 
 
 
-## ~ by treatment
 
-```{r plot by treatment}
-
-
-### ~~ degradation in soil ####
-
-ggplot(combined_dat, 
-       aes(x = ai_name, 
-           y = Soil.degradation..days...aerobic..DT....field..DT....field., 
-           fill = ai_name)) +
-  geom_col() +
-  theme_minimal() +
-  labs(
-    title = expression("Field" ~ DT[50] ~ "(days)"),
-    x = "Pesticide Active Ingredient",
-    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
-    fill = "Active Ingredient"
-  ) +
-  theme_classic() +
-  theme(
-    panel.border = element_rect(color = "black", fill = NA, size = 1),
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank(),
-    legend.position = "bottom") +
-  facet_wrap(~ year + treatment, ncol = 6)  # Facet by the treatment column
-
-#ggsave(filename = "Data/agronomy/plots/ai_degradation_soil_by_treatment_year.png", width = 10, height = 6)
-
-
-
-
-### ~~ worm risk ####
-
-ggplot(combined_dat, 
-       aes(x = ai_name, 
-           y = worm_risk_index, 
-           fill = ai_name)) +
-  geom_col() +
-  theme_minimal() +
-  labs(
-    title = expression("Field" ~ DT[50] ~ "(days)"),
-    x = "Pesticide Active Ingredient",
-    y = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
-    fill = "Active Ingredient"
-  ) +
-  theme_classic() +
-  theme(
-    panel.border = element_rect(color = "black", fill = NA, size = 1),
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank(),
-    legend.position = "bottom") +
-  facet_wrap(~ year + treatment, ncol = 6)  # Facet by the treatment column
-
-
-```
-
-
-
-
-#*******************************************************************************####
+#________________________________####
 # BARPLOTS
-#******************************************************************************####
+
 
 
 
@@ -559,7 +457,7 @@ ggsave(filename = "plots/pesticide_risk_plots/pli_tli_gus.png", width = 10, heig
 
 # plot worm index by treatment and year
 worm_plot <-
-  ggplot(data = worm_risk_index_sum, 
+  ggplot(data = pli_worms_sum, 
          aes(x = treatment, 
              y = sum, 
              fill = treatment)) + 
@@ -568,8 +466,8 @@ worm_plot <-
            position = "dodge") + 
   labs(
     x = "Treatment",
-    y = "Earthworm Risk Index",
-    subtitle = "Earthworm Risk Index", 
+    y = "PLI",
+    subtitle = "Earthworm PLI", 
     caption = "") +
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
@@ -591,7 +489,7 @@ worm_plot
 
 # plot worm index by treatment and year
 mammal_plot <-
-  ggplot(data = mammal_risk_index_sum, 
+  ggplot(data = pli_mammal_sum, 
          aes(x = treatment, 
              y = sum, 
              fill = treatment)) + 
@@ -600,8 +498,8 @@ mammal_plot <-
            position = "dodge") + 
   labs(
     x = "Treatment",
-    y = "Mammal Risk Index",
-    subtitle = "Mammal Risk Index", 
+    y = "PLI",
+    subtitle = "Mammal PLI", 
     caption = "") +
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
@@ -620,42 +518,11 @@ mammal_plot
 
 
 
-### ~~ collembola risk index ####
-
-# # plot worm index by treatment and year
-# collembola_plot <-
-#   ggplot(data = collembola_risk_index_sum, 
-#          aes(x = treatment, 
-#              y = sum, 
-#              fill = treatment)) + 
-#   geom_bar(stat = "identity", 
-#            color = "black", 
-#            position = "dodge") + 
-#   labs(
-#     subtitle = "Collembola Risk Index",
-#     x = "Treatment",
-#     y = "Risk Index",
-#     caption = "") +
-#   theme_bw() +
-#   scale_fill_manual(values=c("turquoise3","tomato2"), 
-#                     name = "Treatment") +
-#   theme(strip.text.x = element_text(size = 12, 
-#                                     color = "black", 
-#                                     face = "bold.italic"), 
-#         legend.position = "bottom", 
-#         axis.text.x = element_blank(), 
-#         axis.title.x = element_blank()) +
-#   facet_wrap(~ year, 
-#              ncol = 4, 
-#              scales = 'free_x') 
-# collembola_plot
-
-
 ### ~~ birds risk index ####
 
 # plot worm index by treatment and year
 birds_plot <-
-  ggplot(data = birds_risk_index_sum, 
+  ggplot(data = pli_birds_sum, 
          aes(x = treatment, 
              y = sum, 
              fill = treatment)) + 
@@ -663,9 +530,9 @@ birds_plot <-
            color = "black", 
            position = "dodge") + 
   labs(
-    subtitle = "Birds Risk Index",
+    subtitle = "Birds PLI",
     x = "Treatment",
-    y = "Risk Index",
+    y = "PLI",
     caption = "") +
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
@@ -687,11 +554,11 @@ birds_plot
 
 
 # Plot title using expression
-plot_title <- expression("Honey Bee (" * italic("Apis spp.") * ") Risk Index")
+plot_title <- expression("Honey Bee (" * italic("Apis spp.") * ") PLI")
 
 # plot worm index by treatment and year
 bee_plot <-
-  ggplot(data = bee_risk_index_sum, 
+  ggplot(data = pli_bees_sum, 
          aes(x = treatment, 
              y = sum, 
              fill = treatment)) + 
@@ -701,7 +568,7 @@ bee_plot <-
   labs(
     subtitle = plot_title,
     x = "Treatment",
-    y = "Risk Index",
+    y = "PLI",
     caption = "") +
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
@@ -722,7 +589,7 @@ bee_plot
 
 # plot worm index by treatment and year
 fish_plot <-
-  ggplot(data = fish_risk_index_sum, 
+  ggplot(data = pli_fish_sum, 
          aes(x = treatment, 
              y = sum, 
              fill = treatment)) + 
@@ -730,9 +597,9 @@ fish_plot <-
            color = "black", 
            position = "dodge") + 
   labs(
-    subtitle = "Freshwater Fish Risk Index",
+    subtitle = "Freshwater Fish PLI",
     x = "Treatment",
-    y = "Risk Index",
+    y = "PLI",
     caption = "") +
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
@@ -749,6 +616,39 @@ fish_plot <-
 fish_plot
 
 
+
+### ~~ gus risk index ####
+
+# plot worm index by treatment and year
+gus_plot <-
+  ggplot(data = GUS_index_sum, 
+         aes(x = treatment, 
+             y = sum, 
+             fill = treatment)) + 
+  geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  labs(
+    subtitle = "GUS Index", 
+    x = "Treatment",
+    y = "GUS Index",
+    caption = "") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = "Treatment") +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank()) +
+  facet_wrap(~ year, 
+             ncol = 4, 
+             scales = 'free_x') 
+
+gus_plot
+
+
 ```
 
 
@@ -756,19 +656,20 @@ fish_plot
 
 ```{r}
 
-ggarrange(worm_plot, bee_plot, mammal_plot, birds_plot, fish_plot, 
+ggarrange(worm_plot, bee_plot, mammal_plot, birds_plot, fish_plot, gus_plot, 
           ncol = 3, 
           nrow = 2, 
           common.legend = TRUE, 
           legend = "bottom", 
-          labels = c("A","B","C","E","F","G"))
+          labels = c("A","B","C","D", "E","F","G"))
 
 ```
 
 
 ```{r}
 
-ggsave(filename = "plots/pesticide_risk_plots/ecotox_risk_indexes.png", width = 10, height = 6)
+ggsave(filename = "~/OneDrive - Harper Adams University/Data/agronomy/plots/pesticide_risk_plots/ecotox_risk_indexes.png",
+       width = 10, height = 6)
 
 ```
 
