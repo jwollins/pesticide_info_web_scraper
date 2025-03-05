@@ -264,9 +264,10 @@ geom_bar(stat = "identity",
            color = "black", 
            position = "dodge") + 
   labs(
-    subtitle = expression("Total mass (kg"~"ha"^{-1}~")"), 
+    y = expression("Total mass (kg"~"ha"^{-1}~")"), 
     x = "Treatment",
-    y = expression("Total mass (kg"~"ha"^{-1}~")")) +
+    subtitle = "Total mass"
+    ) +
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
@@ -368,6 +369,8 @@ sum <-
     n = n(),
     sum = round(x = sum(ecotox_indic_x_rate, na.rm = TRUE), digits = 2)
   )
+
+sum
 
 
 p2 <-
@@ -513,7 +516,7 @@ geom_bar(stat = "identity",
            color = "black", 
            position = "dodge") + 
   labs(
-    subtitle = expression("Total mass (kg"~"ha"^{-1}~")"), 
+    subtitle = "Total mass", 
     x = "Treatment",
     y = expression("Total mass (kg"~"ha"^{-1}~")")) +
   theme_bw() +
@@ -571,7 +574,7 @@ category_summary <- dat %>%
   mutate(percentage = (total_usage / sum(total_usage)) * 100) %>%
   ungroup()
 
-
+category_summary
 
 a <-
 ggplot(category_summary, aes(x = treatment, y = percentage, fill = category)) +
@@ -600,6 +603,7 @@ category_summary <- dat %>%
   mutate(percentage = (total_x / sum(total_x)) * 100) %>%
   ungroup()
 
+category_summary
 
 
 b <-
@@ -724,10 +728,20 @@ e
 
 ```{r joint plot}
 
-ggarrange(c,d,e,a,b, 
+library(ggpubr)
+
+# Modify each plot to rotate x-axis labels
+a <- a + theme(axis.text.x = element_text(angle = 45, hjust = 1), axis.title = element_blank())
+b <- b + theme(axis.text.x = element_text(angle = 45, hjust = 1), axis.title = element_blank())
+c <- c + theme(axis.text.x = element_text(angle = 45, hjust = 1), axis.title = element_blank())
+d <- d + theme(axis.text.x = element_text(angle = 45, hjust = 1), axis.title = element_blank())
+e <- e + theme(axis.text.x = element_text(angle = 45, hjust = 1), axis.title = element_blank())
+
+# Arrange the plots with ggarrange
+ggarrange(c, d, e, a, b, 
           ncol = 5, 
           nrow = 1, 
-          labels = c("A","B","C","D","E"), 
+          labels = c("A", "B", "C", "D", "E"), 
           common.legend = TRUE, legend = "bottom")
 
 ```
@@ -736,7 +750,7 @@ ggarrange(c,d,e,a,b,
 ```{r}
 
 ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/danish_pli_proportion_joint_plot.png",
-       width = 11.5, height = 3.5)
+       width = 9, height = 4.5)
 
 ```
 

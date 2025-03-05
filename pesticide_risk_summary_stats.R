@@ -9,21 +9,31 @@
 
 library(dplyr)
 library(kableExtra)
-
+library(lme4)
+library(emmeans)
 
 
 
 
 #_________________________________________________________________________####
-
 # LOAD DATA ####
 
+dat <- read.csv(file = "sym_link_pesticide_data/data/pesticide_data/danish_pli_total_pli_data.csv")
 
-combined_dat <- read.csv(file = "Data/agronomy/data/pesticide_data/pesticide_properties_data.csv")
+# combined_dat <- read.csv(file = "Data/agronomy/data/pesticide_data/pesticide_properties_data.csv")
 
-combined_dat$year <- factor(combined_dat$year, levels = c(2022, 2023, 2024))
+dat$year <- factor(dat$year, levels = c(2022, 2023, 2024))
+
+dat$treatment <- factor(dat$treatment, levels = c("Conventional", "Conservation"))
 
 
+
+#_________________________________________________________________________####
+# Functions ####
+
+
+source(file = "~/Documents/GitHub/phd_tools/fun_distribution_plots.R")
+source(file = "~/Documents/GitHub/phd_tools/fun_glm_diagnostic_plots.R")
 
 
 
@@ -31,233 +41,217 @@ combined_dat$year <- factor(combined_dat$year, levels = c(2022, 2023, 2024))
 # SUMMARY TABLES ####
 
 
+# ~ PLI ECO ####
 
-#_____________####
+names(dat)
+
+# Calculates mean, sd, se and IC - block
+ecotox_indic_x_rate <- 
+  dat %>%
+  group_by(treatment, year) %>%
+  summarise( 
+    n = n(),
+    sum = sum(ecotox_indic_x_rate, na.rm = TRUE),
+    sd = sd(ecotox_indic_x_rate, na.rm = TRUE)
+  ) %>%
+  mutate( se = sd/sqrt(n))  %>%
+  mutate( ic = se * qt((1-0.05)/2 + .5, n-1)) %>% 
+  arrange(year)
+
+ecotox_indic_x_rate
+
+
+distribution_plots(data = dat, 
+                   variable = dat$ecotox_indic_x_rate, 
+                   colour = dat$ecotox_indic_x_rate)
+
+ggsave(filename = "sym_link_pesticide_data/plots/distributions/dist_ecotox_indic_x_rate.png", width = 10, height = 2.25)
+
+
+glm_model <- glmer(formula = ecotox_indic_x_rate +1 ~ treatment + (1 | year) + (1 | crop), 
+                   data = dat, 
+                   family = Gamma(link = "log"))
+
+
+# View summary
+summary(glm_model)
+
+# Run pairwise comparisons for the 'Treatment' factor
+pairwise_comparisons <- emmeans(glm_model, pairwise ~ treatment)
+
+# View the results of pairwise comparisons
+summary(pairwise_comparisons)
+
+
+diagnostic_plots_glm(model = glm_model)
+
+ggsave(filename = "sym_link_pesticide_data/plots/model_diagnostics/ecotox_indic_x_rate.png", 
+       width = 10, height = 3.5)
+
+
+
+
+
+# ~ PLI FATE ####
+
+names(dat)
+
+# Calculates mean, sd, se and IC - block
+env_fate_indic_x_rate <- 
+  dat %>%
+  group_by(treatment, year) %>%
+  summarise( 
+    n = n(),
+    sum = sum(env_fate_indic_x_rate, na.rm = TRUE),
+    sd = sd(env_fate_indic_x_rate, na.rm = TRUE)
+  ) %>%
+  mutate( se = sd/sqrt(n))  %>%
+  mutate( ic = se * qt((1-0.05)/2 + .5, n-1)) %>% 
+  arrange(year)
+
+env_fate_indic_x_rate
+
+
+distribution_plots(data = dat, 
+                   variable = dat$env_fate_indic_x_rate, 
+                   colour = dat$env_fate_indic_x_rate)
+
+ggsave(filename = "sym_link_pesticide_data/plots/distributions/dist_env_fate_indic_x_rate.png", 
+       width = 10, height = 2.25)
+
+
+glm_model <- glmer(formula = env_fate_indic_x_rate +1 ~ treatment + (1 | year) + (1 | crop), 
+                   data = dat, 
+                   family = Gamma(link = "log"))
+
+# View summary
+summary(glm_model)
+
+
+# Run pairwise comparisons for the 'Treatment' factor
+pairwise_comparisons <- emmeans(glm_model, pairwise ~ treatment)
+
+# View the results of pairwise comparisons
+summary(pairwise_comparisons)
+
+
+diagnostic_plots_glm(model = glm_model)
+
+ggsave(filename = "sym_link_pesticide_data/plots/model_diagnostics/env_fate_indic_x_rate.png", 
+       width = 10, height = 3.5)
+
+
+
+
+
+
+
+
+# ~ PLI HH ####
+
+names(dat)
+
+# Calculates mean, sd, se and IC - block
+human_health_indic_x_rate <- 
+  dat %>%
+  group_by(treatment, year) %>%
+  summarise( 
+    n = n(),
+    sum = sum(human_health_indic_x_rate, na.rm = TRUE),
+    sd = sd(human_health_indic_x_rate, na.rm = TRUE)
+  ) %>%
+  mutate( se = sd/sqrt(n))  %>%
+  mutate( ic = se * qt((1-0.05)/2 + .5, n-1)) %>% 
+  arrange(year)
+
+human_health_indic_x_rate
+
+
+distribution_plots(data = dat, 
+                   variable = dat$human_health_indic_x_rate, 
+                   colour = dat$human_health_indic_x_rate)
+
+ggsave(filename = "sym_link_pesticide_data/plots/distributions/dist_human_health_indic_x_rate.png", 
+       width = 10, height = 2.25)
+
+
+glm_model <- glmer(formula = human_health_indic_x_rate +1 ~ treatment + (1 | year) + (1 | crop), 
+                   data = dat, 
+                   family = Gamma(link = "log"))
+
+# View summary
+summary(glm_model)
+
+
+# Run pairwise comparisons for the 'Treatment' factor
+pairwise_comparisons <- emmeans(glm_model, pairwise ~ treatment)
+
+# View the results of pairwise comparisons
+summary(pairwise_comparisons)
+
+
+diagnostic_plots_glm(model = glm_model)
+
+ggsave(filename = "sym_link_pesticide_data/plots/model_diagnostics/human_health_indic_x_rate.png", 
+       width = 10, height = 3.5)
+
+
+
+
+
+
+
+
+
 # ~ PLI ####
 
-## ~~ mammals #### 
-pli_mammal_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
+names(dat)
+
+# Calculates mean, sd, se and IC - block
+total_pli_x_rate <- 
+  dat %>%
+  group_by(treatment, year) %>%
+  summarise( 
     n = n(),
-    sum = round(x = sum(PLI_mammal, na.rm = TRUE), digits = 2)
-  )
+    sum = sum(total_pli_x_rate, na.rm = TRUE),
+    sd = sd(total_pli_x_rate, na.rm = TRUE)
+  ) %>%
+  mutate( se = sd/sqrt(n))  %>%
+  mutate( ic = se * qt((1-0.05)/2 + .5, n-1)) %>% 
+  arrange(year)
+
+total_pli_x_rate
 
 
-## ~~ worms #### 
-pli_worms_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(PLI_earthworms, na.rm = TRUE), digits = 2)
-  )
+distribution_plots(data = dat, 
+                   variable = dat$total_pli_x_rate, 
+                   colour = dat$total_pli_x_rate)
+
+ggsave(filename = "sym_link_pesticide_data/plots/distributions/dist_total_pli_x_rate.png", 
+       width = 10, height = 2.25)
 
 
-## ~~ bees #### 
-pli_bees_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(PLI_bees, na.rm = TRUE), digits = 2)
-  )
+glm_model <- glmer(formula = total_pli_x_rate +1 ~ treatment + (1 | year) + (1 | crop), 
+                   data = dat, 
+                   family = Gamma(link = "log"))
+
+# View summary
+summary(glm_model)
 
 
-## ~~ collembola #### 
-pli_collembola_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(PLI_collembola, na.rm = TRUE), digits = 2)
-  )
+# Run pairwise comparisons for the 'Treatment' factor
+pairwise_comparisons <- emmeans(glm_model, pairwise ~ treatment)
+
+# View the results of pairwise comparisons
+summary(pairwise_comparisons)
 
 
-## ~~ birds #### 
-pli_birds_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(PLI_birds, na.rm = TRUE), digits = 2)
-  )
+diagnostic_plots_glm(model = glm_model)
+
+ggsave(filename = "sym_link_pesticide_data/plots/model_diagnostics/total_pli_x_rate.png", 
+       width = 10, height = 3.5)
 
 
-## ~~ fish #### 
-pli_fish_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(PLI_fish, na.rm = TRUE), digits = 2)
-  )
-
-
-
-
-
-
-
-
-
-
-# # total PLI for each treatment
-# total_pli_sum <- combined_dat %>%
-#   group_by(treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(pesticide_load_index, na.rm = TRUE), digits = 2)
-#   )
-
-
-
-
-
-
-#_____________####
-# ~ TLI ####
-
-
-
-## ~~ mammals #### 
-tli_mammal_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(TLI_mammal, na.rm = TRUE), digits = 2)
-  )
-
-
-## ~~ worms #### 
-tli_worms_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(TLI_earthworms, na.rm = TRUE), digits = 2)
-  )
-
-
-## ~~ bees #### 
-tli_bees_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(TLI_bees, na.rm = TRUE), digits = 2)
-  )
-
-
-## ~~ collembola #### 
-tli_collembola_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(TLI_collembola, na.rm = TRUE), digits = 2)
-  )
-
-
-## ~~ birds #### 
-tli_birds_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(TLI_birds, na.rm = TRUE), digits = 2)
-  )
-
-
-## ~~ fish #### 
-tli_fish_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(TLI_fish, na.rm = TRUE), digits = 2)
-  )
-
-
-
-
-# #PLI by treamtent and year
-# tli_sum <- combined_dat %>%
-#   group_by(year, treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(toxic_load_index, na.rm = TRUE), digits = 4)
-#   )
-# 
-# 
-# # total PLI for each treatment
-# total_tli_sum <- combined_dat %>%
-#   group_by(treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(toxic_load_index, na.rm = TRUE), digits = 4)
-#   )
-# 
-# 
-# 
-# 
-# ## ~ worm risk index ####
-# worm_risk_index_sum <- combined_dat %>%
-#   group_by(year, treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(worm_risk_index, na.rm = TRUE), digits = 4)
-#   )
-# 
-# 
-# ## ~ bee risk index ####
-# bee_risk_index_sum <- combined_dat %>%
-#   group_by(year, treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(bee_risk_index, na.rm = TRUE), digits = 4)
-#   )
-# 
-# ## ~ mammal risk index ####
-# mammal_risk_index_sum <- combined_dat %>%
-#   group_by(year, treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(mammal_risk_index, na.rm = TRUE), digits = 4)
-#   )
-# 
-# ## ~ bee risk index ####
-# # collembola_risk_index_sum <- combined_dat %>%
-# #   group_by(year, treatment) %>%
-# #   summarise(
-# #     n = n(),
-# #     sum = round(x = sum(collembola_risk_index, na.rm = TRUE), digits = 4)
-# #   )
-# 
-# ## ~ birds risk index ####
-# birds_risk_index_sum <- combined_dat %>%
-#   group_by(year, treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(birds_risk_index, na.rm = TRUE), digits = 4)
-#   )
-# 
-# ## ~ fish risk index ####
-# fish_risk_index_sum <- combined_dat %>%
-#   group_by(year, treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(fish_risk_index, na.rm = TRUE), digits = 4)
-#   )
-
-
-
-
-
-
-
-
-
-#_______________####
-# ~ GUS index ####
-
-#PLI by treamtent and year
-GUS_index_sum <- combined_dat %>%
-  group_by(year, treatment) %>%
-  summarise(
-    n = n(),
-    sum = round(x = sum(gus_risk_index, na.rm = TRUE), digits = 4)
-  )
 
 
 

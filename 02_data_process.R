@@ -1268,14 +1268,14 @@ env_fate_indic <-
   mutate(
     field_dt50_val = as.numeric(field_dt50_val),
     SCI_GROW_val = as.numeric(SCI_GROW_val),
-    BCF_val = as.numeric(BCF_val),
+    BCF_val = suppressWarnings(as.numeric(BCF_val)),
     
     DT50_norm = field_dt50_val / max(field_dt50_val, na.rm = TRUE), 
     SCI_GROW_norm = SCI_GROW_val / max(SCI_GROW_val, na.rm = TRUE),
     BCF_norm = BCF_val / max(BCF_val, na.rm = TRUE),
     
-    # Calculate the Environmental Fate Indicator
-    Env_Fate_Indicator = DT50_norm + SCI_GROW_norm + BCF_norm
+    # Compute the Environmental Fate Indicator using rowSums to handle NAs
+    Env_Fate_Indicator = rowSums(across(c(DT50_norm, SCI_GROW_norm, BCF_norm)), na.rm = TRUE)
   ) %>%
   select(year, treatment, crop, ai_name, category, avg_normalized_rate_kg_ha,
           DT50_norm, SCI_GROW_norm,
@@ -1325,12 +1325,14 @@ bees_ld50_val <- combined_dat$honeybees_apis_spp_honeybees_apis_spp_contact_acut
 
 
 
+combined_dat$aquatic_plants_acute_7_day_ec50_biomass_mg_l_1_aquatic_plants_acute_7_day_ec50_biomass_mg_l_1_aquatic_plants_acute_7_day_ec50_biomass_mg_l_1
 
 
 
 
 # ~ caluclate the sub indicator ####
 
+aq_plants_ec50_val
 
 # Calculate Ecotoxicology Sub-Indicator
 ecotox_indic <- 
@@ -1356,20 +1358,20 @@ ecotox_indic <-
     aq_plants_ec50_norm = 1 / (aq_plants_ec50_val / min(aq_plants_ec50_val, na.rm = TRUE)),
     bees_ld50_norm = 1 / (bees_ld50_val / min(bees_ld50_val, na.rm = TRUE)),
     
-    # Apply weighting factors (adjust based on literature)
+    # Apply weighting factors (based on: lewisApplicationDanishPesticide2021)
     fish_weighted = fish_lc50_norm * 2,  # Example: Fish impact weight
-    dapnia_weighted = dapnia_ec50_norm * 1.5,  # Daphnia impact
-    worm_weighted = worm_lc50_norm * 1.2,  # Earthworm impact
-    birds_weighted = birds_ld50_norm * 2,  # Bird impact
-    mammals_weighted = mammals_ld50_norm * 2,  # Mammal impact
-    algae_weighted = algae_ec50_norm * 1.2,  # Algae impact
-    aq_plants_weighted = aq_plants_ec50_norm * 1.3,  # Aquatic plant impact
-    bees_weighted = bees_ld50_norm * 3,  # Bees impact (higher importance)
+    dapnia_weighted = dapnia_ec50_norm * 30,  # Daphnia impact
+    worm_weighted = worm_lc50_norm * 2,  # Earthworm impact
+    birds_weighted = birds_ld50_norm * 1,  # Bird impact
+    mammals_weighted = mammals_ld50_norm * 1,  # Mammal impact
+    algae_weighted = algae_ec50_norm * 3,  # Algae impact
+    aq_plants_weighted = aq_plants_ec50_norm * 3,  # Aquatic plant impact
+    bees_weighted = bees_ld50_norm * 100,  # Bees impact (higher importance)
     
-    # Compute the Ecotoxicology Load
-    EcoTox_Indicator = fish_weighted + dapnia_weighted + worm_weighted + 
-      birds_weighted + mammals_weighted + algae_weighted + 
-      aq_plants_weighted + bees_weighted
+    # Compute the Ecotoxicology Load using rowSums to ignore NAs
+    EcoTox_Indicator = rowSums(across(c(fish_weighted, dapnia_weighted, worm_weighted, 
+                                        birds_weighted, mammals_weighted, algae_weighted, 
+                                        aq_plants_weighted, bees_weighted)), na.rm = TRUE)
   ) %>%
   select(year, treatment, crop, ai_name, category, avg_normalized_rate_kg_ha,
          fish_weighted, dapnia_weighted, worm_weighted,
@@ -1397,17 +1399,39 @@ write.csv(x = ecotox_indic, file = "sym_link_pesticide_data/data/pesticide_data/
 #___________####
 # Human health ####
 
+unique(total_pli_df$h_codes)
 
-# Define human health scores for H-phrases
+# Define expanded human health scores for H-phrases
 h_phrase_scores <- list(
-  "H302" = 10,  # Harmful if swallowed
-  "H315" = 10,  # Skin irritation
-  "H319" = 10,  # Serious eye irritation
-  "H331" = 50,  # Toxic if inhaled
-  "H340" = 100, # May cause genetic defects
-  "H350" = 100, # May cause cancer
-  "H300" = 100  # Fatal if swallowed
+  "H300" = 100,  # Fatal if swallowed
+  "H301" = 50,   # Toxic if swallowed
+  "H302" = 10,   # Harmful if swallowed
+  "H310" = 100,  # Fatal in contact with skin
+  "H311" = 50,   # Toxic in contact with skin
+  "H312" = 10,   # Harmful in contact with skin
+  "H314" = 50,   # Causes severe skin burns and eye damage
+  "H315" = 10,   # Causes skin irritation
+  "H317" = 10,   # May cause an allergic skin reaction
+  "H318" = 50,   # Causes serious eye damage
+  "H319" = 10,   # Causes serious eye irritation
+  "H330" = 100,  # Fatal if inhaled
+  "H331" = 50,   # Toxic if inhaled
+  "H332" = 10,   # Harmful if inhaled
+  "H335" = 10,   # May cause respiratory irritation
+  "H336" = 10,   # May cause drowsiness or dizziness
+  "H340" = 100,  # May cause genetic defects
+  "H341" = 50,   # Suspected of causing genetic defects
+  "H350" = 100,  # May cause cancer
+  "H351" = 50,   # Suspected of causing cancer
+  "H360" = 100,  # May damage fertility or the unborn child
+  "H361" = 50,   # Suspected of damaging fertility or the unborn child
+  "H362" = 50,   # May cause harm to breast-fed children
+  "H370" = 100,  # Causes damage to organs
+  "H371" = 50,   # May cause damage to organs
+  "H372" = 100,  # Causes damage to organs through prolonged or repeated exposure
+  "H373" = 50    # May cause damage to organs through prolonged or repeated exposure
 )
+
 
 # Function to compute human health score for each pesticide
 calculate_human_health <- function(h_phrases) {
