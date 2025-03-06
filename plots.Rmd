@@ -42,6 +42,10 @@ Read the combined data set
 
 dat <- read.csv(file = "sym_link_pesticide_data/data/pesticide_data/danish_pli_total_pli_data.csv")
 
+dat$year <- factor(dat$year, levels = c(2022, 2023, 2024))
+
+dat$treatment <- factor(dat$treatment, levels = c("Conservation", "Conventional"))
+
 ```
 
 
@@ -147,7 +151,7 @@ p2
 # ~ Environmental fate PLI x rate
 
 
-```{r ecotox pli plots}
+```{r env fate pli plots}
 
 names(dat)
 
@@ -288,7 +292,7 @@ p5
 # joint plot 
 
 
-```{r joint plot}
+```{r joint plot xyt}
 
 ggarrange(p2,p3,p4,p5,p1, 
           ncol = 3, 
@@ -316,21 +320,31 @@ ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/danish_pli
 # ~ Total PLI x rate
 
 
-```{r Total PLI plots}
+```{r Total PLI xt plots}
 
 sum <- 
    dat %>%
-  group_by(treatment) %>%
+  group_by(treatment, year) %>%
   summarise(
     n = n(),
     sum = round(x = sum(total_pli_x_rate, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum, na.rm = TRUE), 2),
+    sd = round(sd(sum, na.rm = TRUE), 2),
+    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
+  
+sum
 
 
 p1 <-
 ggplot(data = sum, 
             aes(x = treatment, 
-                y = sum, 
+                y = mean, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -342,6 +356,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
+      geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -358,25 +376,30 @@ p1
 # ~ Ecotoxicity PLI x rate
 
 
-```{r ecotox pli plots}
-
-names(dat)
+```{r ecotox pli xt plots}
 
 sum <- 
    dat %>%
-  group_by(treatment) %>%
+  group_by(treatment, year) %>%
   summarise(
     n = n(),
     sum = round(x = sum(ecotox_indic_x_rate, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum, na.rm = TRUE), 2),
+    sd = round(sd(sum, na.rm = TRUE), 2),
+    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
 
 sum
 
-
 p2 <-
 ggplot(data = sum, 
             aes(x = treatment, 
-                y = sum, 
+                y = mean, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -388,6 +411,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
+        geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -405,23 +432,31 @@ p2
 # ~ Environmental fate PLI x rate
 
 
-```{r ecotox pli plots}
+```{r env fate pli xt plots}
 
-names(dat)
 
 sum <- 
    dat %>%
-  group_by(treatment) %>%
+  group_by(treatment, year) %>%
   summarise(
     n = n(),
     sum = round(x = sum(env_fate_indic_x_rate, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum, na.rm = TRUE), 2),
+    sd = round(sd(sum, na.rm = TRUE), 2),
+    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
 
+sum
 
 p3 <-
 ggplot(data = sum, 
             aes(x = treatment, 
-                y = sum, 
+                y = mean, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -433,6 +468,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
+   geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -450,23 +489,39 @@ p3
 # ~ Human health PLI x rate
 
 
-```{r human health pli plots}
+```{r human health pli xt plots}
 
 names(dat)
 
+# sum <- 
+#    dat %>%
+#   group_by(treatment) %>%
+#   summarise(
+#     n = n(),
+#     sum = round(x = sum(human_health_indic_x_rate, na.rm = TRUE), digits = 2)
+#   )
+
 sum <- 
    dat %>%
-  group_by(treatment) %>%
+  group_by(treatment, year) %>%
   summarise(
     n = n(),
     sum = round(x = sum(human_health_indic_x_rate, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum, na.rm = TRUE), 2),
+    sd = round(sd(sum, na.rm = TRUE), 2),
+    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
 
 
 p4 <-
 ggplot(data = sum, 
             aes(x = treatment, 
-                y = sum, 
+                y = mean, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -478,6 +533,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
+   geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -494,23 +553,41 @@ p4
 # ~ Total mass PLI x rate
 
 
-```{r total ppp mass plots}
+```{r total ppp mass xt plots}
 
 names(dat)
 
+# sum <- 
+#    dat %>%
+#   group_by(treatment) %>%
+#   summarise(
+#     n = n(),
+#     sum = round(x = sum(avg_normalized_rate_kg_ha, na.rm = TRUE), digits = 2)
+#   )
+
+
 sum <- 
    dat %>%
-  group_by(treatment) %>%
+  group_by(treatment, year) %>%
   summarise(
     n = n(),
     sum = round(x = sum(avg_normalized_rate_kg_ha, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum, na.rm = TRUE), 2),
+    sd = round(sd(sum, na.rm = TRUE), 2),
+    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
+
 
 
 p5 <-
 ggplot(data = sum, 
             aes(x = treatment, 
-                y = sum, 
+                y = mean, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -522,6 +599,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
+   geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -536,7 +617,7 @@ p5
 # joint plot 
 
 
-```{r joint plot}
+```{r joint xt plot xt}
 
 ggarrange(p2,p3,p4,p5,p1, 
           ncol = 5, 
@@ -636,7 +717,7 @@ category_summary <- dat %>%
   mutate(percentage = (total_x / sum(total_x)) * 100) %>%
   ungroup()
 
-
+category_summary
 
 c <-
 ggplot(category_summary, 
@@ -669,6 +750,7 @@ category_summary <- dat %>%
   mutate(percentage = (total_x / sum(total_x)) * 100) %>%
   ungroup()
 
+category_summary
 
 
 d <-
@@ -701,7 +783,7 @@ category_summary <- dat %>%
   mutate(percentage = (total_x / sum(total_x)) * 100) %>%
   ungroup()
 
-
+category_summary
 
 e <-
 ggplot(category_summary, 
@@ -726,7 +808,7 @@ e
 # joint plot 
 
 
-```{r joint plot}
+```{r joint plot proportions}
 
 library(ggpubr)
 
@@ -758,637 +840,4 @@ ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/danish_pli
 
 
 
-
-#__________________________________
-# General value plots 
-
-
-# ~ DT50 & GUS plots 
-
-
-```{r GUS & soil DT50 plots}
-
-### ~~ general soil half life plot ####
-
-# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-gus_plot <- ggplot(combined_dat, 
-            aes(x = ai_name, 
-                y = GUS.leaching.potential.index.GUS.leaching.potential.index.GUS.leaching.potential.index, 
-                fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  ylim(0,10) +
-  labs(
-    title = "Groundwater Ubiquity Score (GUS)",
-    x = "Pesticide Active Ingrdient",
-    y = "GUS",
-    fill = "Active Ingrdient"
-  ) +
-  theme_classic() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
-
-
-
-# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-soil_dt50 <- ggplot(combined_dat, 
-            aes(x = ai_name, 
-                y = Soil.degradation..days...aerobic..DT....field..DT....field., 
-                fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() + 
-  ylim(0,800) +
-  labs(
-    y = expression("Field" ~ DT[50] ~ "(days)"),
-    x = "Pesticide Active Ingrdient",
-    title = expression("Soil Degradation Time " ~ DT[50] ~ "(days)"),
-    fill = "Active Ingrdient"
-  ) +
-  theme_classic() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
-
-
-
-```
-
-
-
-Create the joint plot of Soil degradation half life
-
-```{r soil dt50 combination plot}
-
-ggarrange(soil_dt50, gus_plot, 
-          ncol = 2, 
-          nrow = 1, 
-          labels = c("A","B"), 
-          common.legend = TRUE, 
-          legend = "bottom", align = "h")
-```
-
-```{r save dt50 combo plot}
-ggsave(filename = "~/OneDrive - Harper Adams University/Data/agronomy/plots/pesticide_risk_plots/fig_field_dt50_gus_plot.png", 
-       width = 10, height = 5.5)
-
-```
-
-
-
-
-
-
-
-
-#____________________________________________________________####
-# TOXICITY by AI
-
-
-
-```{r ecotoxicity by AI}
-
-### ~~ mammals ####
-
-# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-a <- ggplot(combined_dat, 
-            aes(x = ai_name, 
-                y = Mammals...Acute.oral.LD....mg.kg....Mammals...Acute.oral.LD....mg.kg....Mammals...Acute.oral.LD....mg.kg..., 
-                fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  # ylim(0,800) +
-  labs(
-    title = expression("Mammals - Acute oral" ~ LD[50] ~ (mg ~ kg^{-1})),
-    x = "Pesticide Active Ingrdient",
-    y = expression(LD[50] ~ (mg ~ kg^{-1})),
-    fill = "Active Ingrdient"
-  ) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
-# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
-
-a
-
-
-
-
-### ~~ worms ####
-
-# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-b <- ggplot(combined_dat, 
-            aes(x = ai_name, 
-                y = Earthworms...Acute.14.day.LC....mg.kg....Earthworms...Acute.14.day.LC....mg.kg....Earthworms...Acute.14.day.LC....mg.kg..., 
-                fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  # ylim(0,800) +
-  labs(
-    title = expression("Earthworms - Acute oral" ~ LD[50] ~ (mg ~ kg^{-1})),
-    x = "Pesticide Active Ingrdient",
-    y = expression(LD[50] ~ (mg ~ kg^{-1})),
-    fill = "Active Ingrdient"
-  ) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
-# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
-
-b
-
-
-
-### ~~ birds ####
-
-# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-c <- ggplot(combined_dat, 
-            aes(x = ai_name, 
-                y = Birds...Acute.LD....mg.kg....Birds...Acute.LD....mg.kg....Birds...Acute.LD....mg.kg..., 
-                fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  # ylim(0,800) +
-  labs(
-    title = expression("Birds - Acute" ~ LD[50] ~ (mg ~ kg^{-1})),
-    x = "Pesticide Active Ingrdient",
-    y = expression(LD[50] ~ (mg ~ kg^{-1})),
-    fill = "Active Ingrdient"
-  ) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
-# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
-
-c
-
-### ~~ fish ####
-
-# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-d <- ggplot(combined_dat, 
-            aes(x = ai_name, 
-                y = Temperate.Freshwater.Fish...Acute.96.hour.LC....mg.l....Temperate.Freshwater.Fish...Acute.96.hour.LC....mg.l....Temperate.Freshwater.Fish...Acute.96.hour.LC....mg.l..., 
-                fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  # ylim(0,800) +
-  labs(
-    title = expression("Freshwater Fish - Acute 96 hr" ~ LC[50] ~ (mg ~ l^{-1})),
-    x = "Pesticide Active Ingrdient",
-    y = expression(LC[50] ~ (mg ~ l^{-1})),
-    fill = "Active Ingrdient"
-  ) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
-# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
-
-d
-
-
-### ~~ Bees ####
-
-# Plot title using expression
-plot_title <- expression(
-  "Honeybees (" * italic("Apis spp.") * ") Contact acute LD" [50] *
-    " (" * mu * "g bee" ^ -1 * ")"
-)
-
-# Assuming 'combined_dat' has a column for 'Pesticide' and 'Soil degradation'
-e <- ggplot(combined_dat, 
-            aes(x = ai_name, 
-                y = Honeybees..Apis.spp...Honeybees..Apis.spp...Contact.acute.LD....worst.case.from.24..48.and.72.hour.values...μg.bee..., 
-                fill = ai_name)) +
-  geom_col() +  # Use geom_col() when you already have the values
-  theme_minimal() +
-  # ylim(0,800) +
-  labs(
-    title = plot_title,
-    x = "Pesticide Active Ingrdient",
-    y = expression(
-      "LD" [50] *
-        " (" * mu * "g bee" ^ -1 * ")"
-    ),
-    fill = "Active Ingrdient"
-  ) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_blank(),  # Remove x-axis labels
-    axis.ticks.x = element_blank()  # Optionally remove x-axis ticks
-  )
-# theme(axis.text.x = element_text(angle = -45, hjust = 0))  # Rotate x-axis labels if necessary
-
-e
-
-
-
-
-```
-
-## ~ Combined Toxicity plot 
-
-```{r combo ecotox plot}
-ggarrange(a,b,c,d,e, 
-          ncol = 3, 
-          nrow = 2, 
-          common.legend = TRUE, 
-          legend = "bottom", 
-          labels = c("A","B","C","D","E"))
-
-```
-
-```{r save combo ecotox plot}
-ggsave(filename = "~/OneDrive - Harper Adams University/Data/agronomy/plots/pesticide_risk_plots/fig_ecotox_pesticide_values.png", 
-       width = 13, height = 8)
-
-```
-
-
-```{r combo larger plot}
-
-ggarrange(soil_a, soil_b, soil_c, gus,
-  a,b,c,d,e, 
-          ncol = 3, 
-          nrow = 3, 
-          common.legend = TRUE, 
-          legend = "bottom", 
-          labels = c("A","B","C","D","E"))
-
-```
-```{r}
-ggsave(filename = "plots/pesticide_risk_plots/fig_all_ecotox_pesticide_values.png", width = 13, height = 13)
-
-```
-
-
-
-
-
-#________________________________####
-# BARPLOTS
-
-
-
-
-
-## ~ general indexes by treatment year
-
-
-```{r}
-
-### ~~ TLI barplots ####
-
-# plot TLI by treatment and year
-tli_plot <-
-  ggplot(data = tli_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    subtitle = "Toxic Load Index (TLI)", 
-    x = "Treatment",
-    y = "TLI",
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-
-tli_plot
-
-
-### ~~ PLI barplots ####
-
-# plot PLI by treatment and year
-pli_plot <-
-  ggplot(data = pli_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    subtitle = "Pesticide Load Index (PLI)", 
-    x = "Treatment",
-    y = "PLI",
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-
-pli_plot
-
-
-
-### ~~ GUS index ####
-
-# plot worm index by treatment and year
-gus_plot <-
-  ggplot(data = GUS_index_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    subtitle = "Groundwater Ubiquity Score (GUS) Index", 
-    x = "Treatment",
-    y = "GUS Index",
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-
-gus_plot
-
-
-
-```
-
-
-```{r}
-
-ggarrange(pli_plot, tli_plot, gus_plot, 
-          ncol = 3, 
-          nrow = 1, 
-          common.legend = TRUE, 
-          legend = "bottom", labels = c("A","B","C"))
-
-```
-
-
-save PLI, TLI, AND GUS PLOT
-
-```{r}
-ggsave(filename = "plots/pesticide_risk_plots/pli_tli_gus.png", width = 10, height = 4)
-
-```
-
-
-
-## ~ eco risk plot by treatment x year ####
-
-
-```{r}
-
-### ~~ worm risk index ####
-
-# plot worm index by treatment and year
-worm_plot <-
-  ggplot(data = pli_worms_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    x = "Treatment",
-    y = "PLI",
-    subtitle = "Earthworm PLI", 
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-
-worm_plot
-
-
-### ~~ mammal risk index ####
-
-# plot worm index by treatment and year
-mammal_plot <-
-  ggplot(data = pli_mammal_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    x = "Treatment",
-    y = "PLI",
-    subtitle = "Mammal PLI", 
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-
-mammal_plot
-
-
-
-### ~~ birds risk index ####
-
-# plot worm index by treatment and year
-birds_plot <-
-  ggplot(data = pli_birds_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    subtitle = "Birds PLI",
-    x = "Treatment",
-    y = "PLI",
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-birds_plot
-
-
-
-### ~~ bee risk index ####
-
-
-# Plot title using expression
-plot_title <- expression("Honey Bee (" * italic("Apis spp.") * ") PLI")
-
-# plot worm index by treatment and year
-bee_plot <-
-  ggplot(data = pli_bees_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    subtitle = plot_title,
-    x = "Treatment",
-    y = "PLI",
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-bee_plot
-
-
-### ~~ fish risk index ####
-
-# plot worm index by treatment and year
-fish_plot <-
-  ggplot(data = pli_fish_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    subtitle = "Freshwater Fish PLI",
-    x = "Treatment",
-    y = "PLI",
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-fish_plot
-
-
-
-### ~~ gus risk index ####
-
-# plot worm index by treatment and year
-gus_plot <-
-  ggplot(data = GUS_index_sum, 
-         aes(x = treatment, 
-             y = sum, 
-             fill = treatment)) + 
-  geom_bar(stat = "identity", 
-           color = "black", 
-           position = "dodge") + 
-  labs(
-    subtitle = "GUS Index", 
-    x = "Treatment",
-    y = "GUS Index",
-    caption = "") +
-  theme_bw() +
-  scale_fill_manual(values=c("turquoise3","tomato2"), 
-                    name = "Treatment") +
-  theme(strip.text.x = element_text(size = 12, 
-                                    color = "black", 
-                                    face = "bold.italic"), 
-        legend.position = "bottom", 
-        axis.text.x = element_blank(), 
-        axis.title.x = element_blank()) +
-  facet_wrap(~ year, 
-             ncol = 4, 
-             scales = 'free_x') 
-
-gus_plot
-
-
-```
-
-
-
-
-```{r}
-
-ggarrange(worm_plot, bee_plot, mammal_plot, birds_plot, fish_plot, gus_plot, 
-          ncol = 3, 
-          nrow = 2, 
-          common.legend = TRUE, 
-          legend = "bottom", 
-          labels = c("A","B","C","D", "E","F","G"))
-
-```
-
-
-```{r}
-
-ggsave(filename = "~/OneDrive - Harper Adams University/Data/agronomy/plots/pesticide_risk_plots/ecotox_risk_indexes.png",
-       width = 10, height = 6)
-
-```
 

@@ -11,6 +11,7 @@ library(dplyr)
 library(kableExtra)
 library(lme4)
 library(emmeans)
+library(ggplot2)
 
 
 
@@ -148,8 +149,6 @@ ggsave(filename = "sym_link_pesticide_data/plots/model_diagnostics/env_fate_indi
 
 
 # ~ PLI HH ####
-
-names(dat)
 
 # Calculates mean, sd, se and IC - block
 human_health_indic_x_rate <- 

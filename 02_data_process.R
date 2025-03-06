@@ -1262,7 +1262,42 @@ BCF_val <- combined_dat$bio_concentration_factor_bio_concentration_factor_bcf_l_
 
 glimpse(combined_dat$avg_normalized_rate_kg_ha)
 
-# Normalize each factor by dividing by its max value
+# # Normalize each factor by dividing by its max value
+# env_fate_indic <- 
+#   combined_dat %>%
+#   mutate(
+#     field_dt50_val = as.numeric(field_dt50_val),
+#     SCI_GROW_val = as.numeric(SCI_GROW_val),
+#     BCF_val = suppressWarnings(as.numeric(BCF_val)),
+#     
+#     # Replace Inf and NA values with max non-NA values (or small epsilon value to avoid div by zero)
+#     BCF_val = ifelse(is.infinite(BCF_val) | is.na(BCF_val) | BCF_val == 0, max(BCF_val, na.rm = TRUE), BCF_val),
+#     SCI_GROW_val = ifelse(is.infinite(SCI_GROW_val) | is.na(SCI_GROW_val) | SCI_GROW_val == 0, max(SCI_GROW_val, na.rm = TRUE), SCI_GROW_val),
+#     field_dt50_val = ifelse(is.infinite(field_dt50_val) | is.na(field_dt50_val) | field_dt50_val == 0, max(field_dt50_val, na.rm = TRUE), field_dt50_val),
+#     
+#     # DT50_norm = field_dt50_val / max(field_dt50_val, na.rm = TRUE), 
+#     # SCI_GROW_norm = SCI_GROW_val / max(SCI_GROW_val, na.rm = TRUE),
+#     # BCF_norm = BCF_val / max(BCF_val, na.rm = TRUE),
+#     
+#     # DT50_norm = field_dt50_val / soil_dt50_ref, 
+#     # SCI_GROW_norm = SCI_GROW_val / soil_mobility_ref,
+#     # BCF_norm = BCF_val / bioaccumilation_ref,
+#     
+#     # Normalize while ensuring no division by zero
+#     DT50_norm = ifelse(soil_dt50_ref == 0, NA, field_dt50_val / soil_dt50_ref), 
+#     SCI_GROW_norm = ifelse(soil_mobility_ref == 0, NA, SCI_GROW_val / soil_mobility_ref),
+#     BCF_norm = ifelse(bioaccumilation_ref == 0, NA, BCF_val / bioaccumilation_ref),
+#     
+#     
+#     # Compute the Environmental Fate Indicator using rowSums to handle NAs
+#     Env_Fate_Indicator = rowSums(across(c(DT50_norm, SCI_GROW_norm, BCF_norm)), na.rm = TRUE)
+#   ) %>%
+#   select(year, treatment, crop, ai_name, category, avg_normalized_rate_kg_ha,
+#           DT50_norm, SCI_GROW_norm,
+#          BCF_norm, Env_Fate_Indicator)
+
+
+
 env_fate_indic <- 
   combined_dat %>%
   mutate(
@@ -1270,16 +1305,38 @@ env_fate_indic <-
     SCI_GROW_val = as.numeric(SCI_GROW_val),
     BCF_val = suppressWarnings(as.numeric(BCF_val)),
     
-    DT50_norm = field_dt50_val / max(field_dt50_val, na.rm = TRUE), 
-    SCI_GROW_norm = SCI_GROW_val / max(SCI_GROW_val, na.rm = TRUE),
-    BCF_norm = BCF_val / max(BCF_val, na.rm = TRUE),
+    # Use a small non-zero value (epsilon) to prevent division by zero
+    epsilon = 1e-6,
     
-    # Compute the Environmental Fate Indicator using rowSums to handle NAs
+    # Prevent division by zero and maintain variation in data
+    BCF_val = ifelse(is.infinite(BCF_val), NA, BCF_val),
+    SCI_GROW_val = ifelse(is.infinite(SCI_GROW_val), NA, SCI_GROW_val),
+    field_dt50_val = ifelse(is.infinite(field_dt50_val), NA, field_dt50_val),
+    
+    # Replace zero values with a small epsilon instead of max
+    BCF_val = ifelse(BCF_val == 0, epsilon, BCF_val),
+    SCI_GROW_val = ifelse(SCI_GROW_val == 0, epsilon, SCI_GROW_val),
+    field_dt50_val = ifelse(field_dt50_val == 0, epsilon, field_dt50_val),
+    
+    # Normalize values
+    DT50_norm = ifelse(!is.na(field_dt50_val), field_dt50_val / soil_dt50_ref, NA), 
+    SCI_GROW_norm = ifelse(!is.na(SCI_GROW_val), SCI_GROW_val / soil_mobility_ref, NA),
+    BCF_norm = ifelse(!is.na(BCF_val), BCF_val / bioaccumilation_ref, NA),
+    
+    # Compute Environmental Fate Indicator (handling NA correctly)
     Env_Fate_Indicator = rowSums(across(c(DT50_norm, SCI_GROW_norm, BCF_norm)), na.rm = TRUE)
   ) %>%
   select(year, treatment, crop, ai_name, category, avg_normalized_rate_kg_ha,
-          DT50_norm, SCI_GROW_norm,
-         BCF_norm, Env_Fate_Indicator)
+         DT50_norm, SCI_GROW_norm, BCF_norm, Env_Fate_Indicator)
+
+# Check if all values are still identical
+summary(env_fate_indic)
+
+
+
+any(is.infinite(env_fate_indic$Env_Fate_Indicator))
+any(is.na(env_fate_indic$Env_Fate_Indicator))
+
 
 # View the updated dataset
 print(env_fate_indic)
@@ -1330,9 +1387,22 @@ combined_dat$aquatic_plants_acute_7_day_ec50_biomass_mg_l_1_aquatic_plants_acute
 
 
 
+# ~ set the reference values ####
+
+# source: lewisApplicationDanishPesticide2021
+birds_ref <- 3.16 # oxamyl (3.16 mg kg−ź)
+mammals_ref <- 2.5 # oxamyl (2.5 mg kg−ź)
+fish_ref <- 0.00006 # tefluthrin (0.00006 mg l−ź)
+daphnia_ref <- 0.00008 # tefluthrin (0.00008 mg l−ź)
+algae_ref <- 0.00018 # picolinafen/bifenox (0.00018 mg l−ź)
+aq_plants_ref <- 0.000019 # clodinafop-propargyl (0.00019 mg l−ź)
+worms_ref <- 0.565 # beta-cyfluthrin (0.565 mg kg−ź soil)
+bees_ref <- 0.0015 # deltamethrin (0.0015 μg bee−ź)
+
+
+
 # ~ caluclate the sub indicator ####
 
-aq_plants_ec50_val
 
 # Calculate Ecotoxicology Sub-Indicator
 ecotox_indic <- 
@@ -1348,15 +1418,25 @@ ecotox_indic <-
     aq_plants_ec50_val = as.numeric(aq_plants_ec50_val),
     bees_ld50_val = as.numeric(bees_ld50_val),
     
+    # # Normalize each toxicity factor using the correct formula (inverted ratio)
+    # fish_lc50_norm = 1 / (fish_lc50_val / min(fish_lc50_val, na.rm = TRUE)), 
+    # dapnia_ec50_norm = 1 / (dapnia_ec50_val / min(dapnia_ec50_val, na.rm = TRUE)),
+    # worm_lc50_norm = 1 / (worm_lc50_val / min(worm_lc50_val, na.rm = TRUE)),
+    # birds_ld50_norm = 1 / (birds_ld50_val / min(birds_ld50_val, na.rm = TRUE)),
+    # mammals_ld50_norm = 1 / (mammals_ld50_val / min(mammals_ld50_val, na.rm = TRUE)),
+    # algae_ec50_norm = 1 / (algae_ec50_val / min(algae_ec50_val, na.rm = TRUE)),
+    # aq_plants_ec50_norm = 1 / (aq_plants_ec50_val / min(aq_plants_ec50_val, na.rm = TRUE)),
+    # bees_ld50_norm = 1 / (bees_ld50_val / min(bees_ld50_val, na.rm = TRUE)),
+    
     # Normalize each toxicity factor using the correct formula (inverted ratio)
-    fish_lc50_norm = 1 / (fish_lc50_val / min(fish_lc50_val, na.rm = TRUE)), 
-    dapnia_ec50_norm = 1 / (dapnia_ec50_val / min(dapnia_ec50_val, na.rm = TRUE)),
-    worm_lc50_norm = 1 / (worm_lc50_val / min(worm_lc50_val, na.rm = TRUE)),
-    birds_ld50_norm = 1 / (birds_ld50_val / min(birds_ld50_val, na.rm = TRUE)),
-    mammals_ld50_norm = 1 / (mammals_ld50_val / min(mammals_ld50_val, na.rm = TRUE)),
-    algae_ec50_norm = 1 / (algae_ec50_val / min(algae_ec50_val, na.rm = TRUE)),
-    aq_plants_ec50_norm = 1 / (aq_plants_ec50_val / min(aq_plants_ec50_val, na.rm = TRUE)),
-    bees_ld50_norm = 1 / (bees_ld50_val / min(bees_ld50_val, na.rm = TRUE)),
+    fish_lc50_norm = 1 / (fish_lc50_val / fish_ref), 
+    dapnia_ec50_norm = 1 / (dapnia_ec50_val / daphnia_ref),
+    worm_lc50_norm = 1 / (worm_lc50_val / worms_ref),
+    birds_ld50_norm = 1 / (birds_ld50_val / birds_ref),
+    mammals_ld50_norm = 1 / (mammals_ld50_val / mammals_ref),
+    algae_ec50_norm = 1 / (algae_ec50_val / algae_ref),
+    aq_plants_ec50_norm = 1 / (aq_plants_ec50_val / aq_plants_ref),
+    bees_ld50_norm = 1 / (bees_ld50_val / bees_ref),
     
     # Apply weighting factors (based on: lewisApplicationDanishPesticide2021)
     fish_weighted = fish_lc50_norm * 2,  # Example: Fish impact weight
@@ -1399,7 +1479,6 @@ write.csv(x = ecotox_indic, file = "sym_link_pesticide_data/data/pesticide_data/
 #___________####
 # Human health ####
 
-unique(total_pli_df$h_codes)
 
 # Define expanded human health scores for H-phrases
 h_phrase_scores <- list(
@@ -1491,11 +1570,49 @@ total_pli_df <- cbind(env_fate_indic,
 
 names(total_pli_df)
 
-# total PLI
-total_pli_df$total_pli <- total_pli_df$Env_Fate_Indicator + total_pli_df$EcoTox_Indicator + total_pli_df$PL_HH
+
+
+
+# ~ scale the PLI ####
+
+total_pli_df <- total_pli_df %>%
+  mutate(
+    Env_Fate_Scaled = (Env_Fate_Indicator - min(Env_Fate_Indicator, na.rm = TRUE)) /
+      (max(Env_Fate_Indicator, na.rm = TRUE) - min(Env_Fate_Indicator, na.rm = TRUE)),
+    
+    EcoTox_Scaled = (EcoTox_Indicator - min(EcoTox_Indicator, na.rm = TRUE)) /
+      (max(EcoTox_Indicator, na.rm = TRUE) - min(EcoTox_Indicator, na.rm = TRUE)),
+    
+    PL_HH_Scaled = (PL_HH - min(PL_HH, na.rm = TRUE)) /
+      (max(PL_HH, na.rm = TRUE) - min(PL_HH, na.rm = TRUE))
+  )
+
+
+
+
+# ~ total PLI ####
+# total_pli_df$total_pli <- total_pli_df$Env_Fate_Indicator + total_pli_df$EcoTox_Indicator + total_pli_df$PL_HH
+
+
+total_pli_df$total_pli <- total_pli_df$Env_Fate_Scaled + 
+  total_pli_df$EcoTox_Scaled + 
+  total_pli_df$PL_HH_Scaled
+
+
+summary(total_pli_df[, c("Env_Fate_Scaled", "EcoTox_Scaled", "PL_HH_Scaled", "total_pli")])
+
+
+
+
+
 
 
 # ~ add rates ####
+
+
+# rate_norm = total_pli_df$avg_normalized_rate_kg_ha / total_pli_df
+# total_pli_x_rate = total_pli * rate_norm
+
 
 total_pli_df$env_fate_indic_x_rate <- total_pli_df$Env_Fate_Indicator * total_pli_df$avg_normalized_rate_kg_ha
 
@@ -1517,140 +1634,8 @@ write.csv(x = total_pli_df,
 
 
 
-#________________________________________________________________________####
-# Proportions ####
-
-
-glimpse(total_pli_df)
-
-
-library(dplyr)
-library(ggplot2)
-
-# Summarize total usage by category and treatment
-category_summary <- total_pli_df %>%
-  group_by(treatment, category) %>%  # Group by both treatment and category
-  summarise(total_usage = sum(avg_normalized_rate_kg_ha, na.rm = TRUE), .groups = "drop") %>%
-  group_by(treatment) %>%  # Group again by treatment to calculate proportions correctly
-  mutate(percentage = (total_usage / sum(total_usage)) * 100) %>%
-  ungroup()
-
-# View summary
-print(category_summary)
 
 
 
 
-
-
-
-
-
-#________________________________________________________________________####
-# CALCULATE LOAD INDEXS ####
-
-
-# # add equation parameters
-# application_rate <- combined_dat$sum_normalized_rate_kg_ha
-# DT50 <- combined_dat$`Soil degradation (days) (aerobic) DT₅₀ (field) DT₅₀ (field)`
-# # LD50 <- combined_dat$`Mammals - Acute oral LD₅₀ (mg kg⁻¹) Mammals - Acute oral LD₅₀ (mg kg⁻¹) Mammals - Acute oral LD₅₀ (mg kg⁻¹)`
-# 
-# 
-# 
-# 
-# # ~ PLI & TLI ####
-# 
-# ## ~~ mammals ####
-# LD50 <- combined_dat$`Mammals - Acute oral LD₅₀ (mg kg⁻¹) Mammals - Acute oral LD₅₀ (mg kg⁻¹) Mammals - Acute oral LD₅₀ (mg kg⁻¹)`
-# 
-# combined_dat$PLI_mammal <- application_rate * (DT50 / LD50)
-# 
-# combined_dat$TLI_mammal <- application_rate * (1 / LD50)
-# 
-# 
-# 
-# ## ~~ worms ####
-# LD50 <- combined_dat$`Earthworms - Acute 14 day LC₅₀ (mg kg⁻¹) Earthworms - Acute 14 day LC₅₀ (mg kg⁻¹) Earthworms - Acute 14 day LC₅₀ (mg kg⁻¹)`
-# 
-# combined_dat$PLI_earthworms <- application_rate * (DT50 / LD50)
-# 
-# combined_dat$TLI_earthworms <- application_rate * (1 / LD50)
-# 
-# 
-# 
-# 
-# 
-# ## ~~ bees ####
-# LD50 <- combined_dat$`Honeybees (Apis spp.) Honeybees (Apis spp.) Contact acute LD₅₀ (worst case from 24, 48 and 72 hour values - μg bee⁻¹)`
-# 
-# combined_dat$PLI_bees <- application_rate * (DT50 / LD50)
-# 
-# combined_dat$TLI_bees <- application_rate * (1 / LD50)
-# 
-# 
-# 
-# 
-# ## ~~ collembola ####
-# LD50 <- combined_dat$`Collembola Chronic NOEC (mg kg⁻¹) Chronic NOEC (mg kg⁻¹)`
-# 
-# combined_dat$PLI_collembola <- application_rate * (DT50 / LD50)
-# 
-# combined_dat$TLI_collembola <- application_rate * (1 / LD50)
-# 
-# 
-# 
-# ## ~~ birds ####
-# LD50 <- combined_dat$`Birds - Acute LD₅₀ (mg kg⁻¹) Birds - Acute LD₅₀ (mg kg⁻¹) Birds - Acute LD₅₀ (mg kg⁻¹)`
-# 
-# combined_dat$PLI_birds <- application_rate * (DT50 / LD50)
-# 
-# combined_dat$TLI_birds <- application_rate * (1 / LD50)
-# 
-# 
-# 
-# 
-# ## ~~ fish ####
-# LD50 <- combined_dat$`Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹) Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹) Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹)`
-# 
-# combined_dat$PLI_fish <- application_rate * (DT50 / LD50)
-# 
-# combined_dat$TLI_fish <- application_rate * (1 / LD50)
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# ## ~ GUS ####
-# 
-# combined_dat$gus_risk_index <- application_rate * combined_dat$`GUS leaching potential index GUS leaching potential index GUS leaching potential index`
-# 
-# 
-# 
-# # ## ~ worm risk index ####
-# # 
-# # combined_dat$worm_risk_index <- application_rate / combined_dat$`Earthworms - Acute 14 day LC₅₀ (mg kg⁻¹) Earthworms - Acute 14 day LC₅₀ (mg kg⁻¹) Earthworms - Acute 14 day LC₅₀ (mg kg⁻¹)`
-# # 
-# # ## ~ bee risk index ####
-# # 
-# # combined_dat$bee_risk_index <- application_rate / combined_dat$`Honeybees (Apis spp.) Honeybees (Apis spp.) Contact acute LD₅₀ (worst case from 24, 48 and 72 hour values - μg bee⁻¹)`
-# # 
-# # ## ~ collembola risk index ####
-# # 
-# # combined_dat$collembola_risk_index <- application_rate / combined_dat$`Collembola Chronic NOEC (mg kg⁻¹) Chronic NOEC (mg kg⁻¹)`
-# # 
-# # ## ~ mammal risk index ####
-# # 
-# # combined_dat$mammal_risk_index <- application_rate / combined_dat$`Mammals - Acute oral LD₅₀ (mg kg⁻¹) Mammals - Acute oral LD₅₀ (mg kg⁻¹) Mammals - Acute oral LD₅₀ (mg kg⁻¹)`
-# # 
-# # ## ~ birds risk index ####
-# # combined_dat$birds_risk_index <- application_rate / combined_dat$`Birds - Acute LD₅₀ (mg kg⁻¹) Birds - Acute LD₅₀ (mg kg⁻¹) Birds - Acute LD₅₀ (mg kg⁻¹)`
-# # 
-# # ## ~ fish risk index ####
-# # combined_dat$fish_risk_index <- application_rate / combined_dat$`Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹) Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹) Temperate Freshwater Fish - Acute 96 hour LC₅₀ (mg l⁻¹)`
-# # 
-# 
-# 
-# 
 
