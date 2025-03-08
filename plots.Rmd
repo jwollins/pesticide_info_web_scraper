@@ -12,6 +12,7 @@ Set the working directory and load the necessary packages
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rstudioapi::getActiveProject())
 
 # # Set the root directory for the R Markdown file
 # knitr::opts_knit$set(root.dir = "~/OneDrive - Harper Adams University/Data/agronomy/")
@@ -322,29 +323,30 @@ ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/danish_pli
 
 ```{r Total PLI xt plots}
 
-sum <- 
+s <- 
    dat %>%
   group_by(treatment, year) %>%
   summarise(
     n = n(),
-    sum = round(x = sum(total_pli_x_rate, na.rm = TRUE), digits = 2)
+    sum1 = round(x = sum(total_pli_x_rate, na.rm = TRUE), digits = 2)
   ) %>% 
   group_by(treatment) %>%
   summarise(
     n = n(),
     # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
-    mean = round(mean(sum, na.rm = TRUE), 2),
-    sd = round(sd(sum, na.rm = TRUE), 2),
-    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
   
-sum
+s
 
 
 p1 <-
-ggplot(data = sum, 
+ggplot(data = s, 
             aes(x = treatment, 
-                y = mean, 
+                y = sum2, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -356,10 +358,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
-      geom_errorbar(aes(ymin=mean-se,
-                        ymax=mean+se),
-                    width=.2,                    # Width of the error bars
-                    position=position_dodge(.9)) +
+      # geom_errorbar(aes(ymin=mean-se,
+      #                   ymax=mean+se),
+      #               width=.2,                    # Width of the error bars
+      #               position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -378,28 +380,29 @@ p1
 
 ```{r ecotox pli xt plots}
 
-sum <- 
+s <- 
    dat %>%
   group_by(treatment, year) %>%
   summarise(
     n = n(),
-    sum = round(x = sum(ecotox_indic_x_rate, na.rm = TRUE), digits = 2)
+    sum1 = round(x = sum(ecotox_indic_x_rate, na.rm = TRUE), digits = 2)
   ) %>% 
   group_by(treatment) %>%
   summarise(
     n = n(),
     # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
-    mean = round(mean(sum, na.rm = TRUE), 2),
-    sd = round(sd(sum, na.rm = TRUE), 2),
-    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
 
-sum
+s
 
 p2 <-
-ggplot(data = sum, 
+ggplot(data = s, 
             aes(x = treatment, 
-                y = mean, 
+                y = sum2, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -411,10 +414,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
-        geom_errorbar(aes(ymin=mean-se,
-                        ymax=mean+se),
-                    width=.2,                    # Width of the error bars
-                    position=position_dodge(.9)) +
+        # geom_errorbar(aes(ymin=mean-se,
+        #                 ymax=mean+se),
+        #             width=.2,                    # Width of the error bars
+        #             position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -435,28 +438,28 @@ p2
 ```{r env fate pli xt plots}
 
 
-sum <- 
+s <- 
    dat %>%
   group_by(treatment, year) %>%
   summarise(
     n = n(),
-    sum = round(x = sum(env_fate_indic_x_rate, na.rm = TRUE), digits = 2)
+    sum1 = round(x = sum(env_fate_indic_x_rate, na.rm = TRUE), digits = 2)
   ) %>% 
   group_by(treatment) %>%
   summarise(
     n = n(),
-    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
-    mean = round(mean(sum, na.rm = TRUE), 2),
-    sd = round(sd(sum, na.rm = TRUE), 2),
-    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
 
-sum
+s
 
 p3 <-
-ggplot(data = sum, 
+ggplot(data = s, 
             aes(x = treatment, 
-                y = mean, 
+                y = sum2, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -468,10 +471,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
-   geom_errorbar(aes(ymin=mean-se,
-                        ymax=mean+se),
-                    width=.2,                    # Width of the error bars
-                    position=position_dodge(.9)) +
+   # geom_errorbar(aes(ymin=mean-se,
+   #                      ymax=mean+se),
+   #                  width=.2,                    # Width of the error bars
+   #                  position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -491,37 +494,28 @@ p3
 
 ```{r human health pli xt plots}
 
-names(dat)
-
-# sum <- 
-#    dat %>%
-#   group_by(treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(human_health_indic_x_rate, na.rm = TRUE), digits = 2)
-#   )
-
-sum <- 
+s <- 
    dat %>%
   group_by(treatment, year) %>%
   summarise(
     n = n(),
-    sum = round(x = sum(human_health_indic_x_rate, na.rm = TRUE), digits = 2)
+    sum1 = round(x = sum(human_health_indic_x_rate, na.rm = TRUE), digits = 2)
   ) %>% 
   group_by(treatment) %>%
   summarise(
     n = n(),
-    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
-    mean = round(mean(sum, na.rm = TRUE), 2),
-    sd = round(sd(sum, na.rm = TRUE), 2),
-    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
 
+s
 
 p4 <-
-ggplot(data = sum, 
+ggplot(data = s, 
             aes(x = treatment, 
-                y = mean, 
+                y = sum2, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -533,10 +527,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
-   geom_errorbar(aes(ymin=mean-se,
-                        ymax=mean+se),
-                    width=.2,                    # Width of the error bars
-                    position=position_dodge(.9)) +
+   # geom_errorbar(aes(ymin=mean-se,
+   #                      ymax=mean+se),
+   #                  width=.2,                    # Width of the error bars
+   #                  position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
@@ -555,39 +549,29 @@ p4
 
 ```{r total ppp mass xt plots}
 
-names(dat)
-
-# sum <- 
-#    dat %>%
-#   group_by(treatment) %>%
-#   summarise(
-#     n = n(),
-#     sum = round(x = sum(avg_normalized_rate_kg_ha, na.rm = TRUE), digits = 2)
-#   )
-
-
-sum <- 
+s <- 
    dat %>%
   group_by(treatment, year) %>%
   summarise(
     n = n(),
-    sum = round(x = sum(avg_normalized_rate_kg_ha, na.rm = TRUE), digits = 2)
+    sum1 = round(x = sum(avg_normalized_rate_kg_ha, na.rm = TRUE), digits = 2)
   ) %>% 
   group_by(treatment) %>%
   summarise(
     n = n(),
-    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
-    mean = round(mean(sum, na.rm = TRUE), 2),
-    sd = round(sd(sum, na.rm = TRUE), 2),
-    se = round(sd(sum, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
   )
 
+s
 
 
 p5 <-
-ggplot(data = sum, 
+ggplot(data = s, 
             aes(x = treatment, 
-                y = mean, 
+                y = sum2, 
                 fill = treatment)) +
 geom_bar(stat = "identity", 
            color = "black", 
@@ -599,10 +583,10 @@ geom_bar(stat = "identity",
   theme_bw() +
   scale_fill_manual(values=c("turquoise3","tomato2"), 
                     name = "Treatment") +
-   geom_errorbar(aes(ymin=mean-se,
-                        ymax=mean+se),
-                    width=.2,                    # Width of the error bars
-                    position=position_dodge(.9)) +
+   # geom_errorbar(aes(ymin=mean-se,
+   #                      ymax=mean+se),
+   #                  width=.2,                    # Width of the error bars
+   #                  position=position_dodge(.9)) +
   theme(strip.text.x = element_text(size = 12, 
                                     color = "black", 
                                     face = "bold.italic"), 
