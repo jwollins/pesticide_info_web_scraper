@@ -825,3 +825,523 @@ ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/danish_pli
 
 
 
+#______________________________
+# joint plots
+
+
+## Total PLI joint plot
+
+```{r PLI}
+
+sum <- 
+   dat %>%
+  group_by(year, treatment) %>%
+  summarise(
+    n = n(),
+    sum = round(x = sum(total_pli_x_rate, na.rm = TRUE), digits = 2)
+  )
+
+
+p1 <-
+ggplot(data = sum, 
+            aes(x = treatment, 
+                y = sum, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,1) +
+  labs(
+    subtitle = "Total PLI", 
+    x = "Treatment",
+    y = "PLI") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank()) +
+  facet_wrap(~ year, 
+             ncol = 4, 
+             scales = 'free_x') 
+
+
+s <- 
+   dat %>%
+  group_by(treatment, year) %>%
+  summarise(
+    n = n(),
+    sum1 = round(x = sum(total_pli_x_rate, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+  )
+  
+ s$Year <- "All Years"  # Dummy variable for faceting
+
+p2 <-
+ggplot(data = s, 
+            aes(x = treatment, 
+                y = mean, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,1) +
+  labs(
+    subtitle = "Total PLI", 
+    x = "Treatment",
+    y = "PLI") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+      geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank()) +
+      facet_wrap(~Year, ncol = 4)  # Ensure it matches `p1`
+
+
+ggarrange(p1,p2,
+          ncol = 2, nrow = 1,  
+          common.legend = TRUE,  # Use a common legend
+          legend = "bottom", 
+          labels = c("A", "B"),
+          widths = c(2, 1))  # Make first column twice as wide
+
+ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/new_plots/fig_PLI.png",
+       width = 10, height = 3.5)
+
+
+```
+
+## Ecotoxicity
+
+```{r ecotoxicity}
+
+sum <- 
+   dat %>%
+  group_by(year, treatment) %>%
+  summarise(
+    n = n(),
+    sum = round(x = sum(ecotox_indic_x_rate, na.rm = TRUE), digits = 2)
+  )
+
+
+p1 <-
+ggplot(data = sum, 
+            aes(x = treatment, 
+                y = sum, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,0.06) +
+  labs(
+    subtitle = expression(Ecotoxicity~(PLI[italic(ECO)])), 
+    x = "Ecotoxicity",
+    y = "PLI") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank()) +
+  facet_wrap(~ year, 
+             ncol = 4, 
+             scales = 'free_x') 
+
+
+s <- 
+   dat %>%
+  group_by(treatment, year) %>%
+  summarise(
+    n = n(),
+    sum1 = round(x = sum(ecotox_indic_x_rate, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+  )
+  
+ s$Year <- "All Years"  # Dummy variable for faceting
+
+p2 <-
+ggplot(data = s, 
+            aes(x = treatment, 
+                y = mean, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,0.06) +
+  labs(
+    subtitle = expression(Ecotoxicity~(PLI[italic(ECO)])), 
+    x = "Treatment",
+    y = "PLI") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+      geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank()) +
+      facet_wrap(~Year, ncol = 4)  # Ensure it matches `p1`
+
+
+ggarrange(p1,p2,
+          ncol = 2, nrow = 1,  
+          common.legend = TRUE,  # Use a common legend
+          legend = "bottom", 
+          labels = c("A", "B"),
+          widths = c(2, 1))  # Make first column twice as wide
+
+ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/new_plots/fig_PLI_Ecotoxicity.png",
+       width = 10, height = 3.5)
+
+
+```
+
+
+## Environmental Fate
+
+```{r Environmental Fate}
+
+sum <- 
+   dat %>%
+  group_by(year, treatment) %>%
+  summarise(
+    n = n(),
+    sum = round(x = sum(env_fate_indic_x_rate, na.rm = TRUE), digits = 4)
+  )
+
+
+p1 <-
+ggplot(data = sum, 
+            aes(x = treatment, 
+                y = sum, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,1.2) +
+  labs(
+    subtitle = expression(Environmental~Fate~(PLI[italic(FATE)])), 
+    x = "Environmental Fate",
+    y = "PLI") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        # axis.text.x = element_blank(), 
+        axis.title.x = element_blank()
+        ) +
+  facet_wrap(~ year, 
+             ncol = 4, 
+             scales = 'free_x') 
+
+
+s <- 
+   dat %>%
+  group_by(treatment, year) %>%
+  summarise(
+    n = n(),
+    sum1 = round(x = sum(env_fate_indic_x_rate_scaled, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+  )
+  
+ s$Year <- "All Years"  # Dummy variable for faceting
+
+p2 <-
+ggplot(data = s, 
+            aes(x = treatment, 
+                y = mean, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,1.2) +
+  labs(
+    subtitle = expression(Environmental~Fate~(PLI[italic(FATE)])), 
+    x = "Treatment",
+    y = "PLI") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+      geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        # axis.text.x = element_blank(), 
+        axis.title.x = element_blank()
+        ) +
+      facet_wrap(~Year, ncol = 4)  # Ensure it matches `p1`
+
+
+ggarrange(p1,p2,
+          ncol = 2, nrow = 1,  
+          common.legend = TRUE,  # Use a common legend
+          legend = "bottom", 
+          labels = c("A", "B"),
+          widths = c(2, 1))  # Make first column twice as wide
+
+ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/new_plots/fig_PLI_Environmental_Fate.png",
+       width = 10, height = 3.5)
+
+
+```
+
+
+## Human Health
+
+```{r Human Health}
+
+sum <- 
+   dat %>%
+  group_by(year, treatment) %>%
+  summarise(
+    n = n(),
+    sum = round(x = sum(human_health_indic_x_rate, na.rm = TRUE), digits = 4)
+  )
+
+
+p1 <-
+ggplot(data = sum, 
+            aes(x = treatment, 
+                y = sum, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,1.5) +
+  labs(
+    subtitle = expression(Human~Health~(PLI[italic(HH)])), 
+    x = "Treatment",
+    y = "PLI") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        # axis.text.x = element_blank(), 
+        axis.title.x = element_blank()
+        ) +
+  facet_wrap(~ year, 
+             ncol = 4, 
+             scales = 'free_x') 
+
+
+s <- 
+   dat %>%
+  group_by(treatment, year) %>%
+  summarise(
+    n = n(),
+    sum1 = round(x = sum(human_health_indic_x_rate, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+  )
+  
+ s$Year <- "All Years"  # Dummy variable for faceting
+
+p2 <-
+ggplot(data = s, 
+            aes(x = treatment, 
+                y = mean, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,1.5) +
+  labs(
+    subtitle = expression(Human~Health~(PLI[italic(HH)])), 
+    x = "Treatment",
+    y = "PLI") +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+      geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        # axis.text.x = element_blank(), 
+        axis.title.x = element_blank()
+        ) +
+      facet_wrap(~Year, ncol = 4)  # Ensure it matches `p1`
+
+
+ggarrange(p1,p2,
+          ncol = 2, nrow = 1,  
+          common.legend = TRUE,  # Use a common legend
+          legend = "bottom", 
+          labels = c("A", "B"),
+          widths = c(2, 1))  # Make first column twice as wide
+
+ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/new_plots/fig_PLI_Human_Health.png",
+       width = 10, height = 3.5)
+
+
+```
+
+
+## Total mass PLI x rate
+
+```{r Total mass PLI x rate}
+
+sum <- 
+   dat %>%
+  group_by(year, treatment) %>%
+  summarise(
+    n = n(),
+    sum = round(x = sum(avg_normalized_rate_kg_ha, na.rm = TRUE), digits = 4)
+  )
+
+
+p1 <-
+ggplot(data = sum, 
+            aes(x = treatment, 
+                y = sum, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,4) +
+  labs(
+    y = expression("Total mass (kg"~"ha"^{-1}~")"), 
+    x = "Treatment",
+    subtitle = "Total pesticide mass"
+    ) +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        # axis.text.x = element_blank(), 
+        axis.title.x = element_blank()
+        ) +
+  facet_wrap(~ year, 
+             ncol = 4, 
+             scales = 'free_x') 
+
+
+s <- 
+   dat %>%
+  group_by(treatment, year) %>%
+  summarise(
+    n = n(),
+    sum1 = round(x = sum(avg_normalized_rate_kg_ha, na.rm = TRUE), digits = 2)
+  ) %>% 
+  group_by(treatment) %>%
+  summarise(
+    n = n(),
+    # sum = round(sum(total_pli_x_rate, na.rm = TRUE), 2),
+    mean = round(mean(sum1, na.rm = TRUE), 2),
+    sum2 = sum(sum1),
+    sd = round(sd(sum1, na.rm = TRUE), 2),
+    se = round(sd(sum1, na.rm = TRUE) / sqrt(n), 2) # Standard Error
+  )
+  
+ s$Year <- "All Years"  # Dummy variable for faceting
+
+p2 <-
+ggplot(data = s, 
+            aes(x = treatment, 
+                y = mean, 
+                fill = treatment)) +
+geom_bar(stat = "identity", 
+           color = "black", 
+           position = "dodge") + 
+  ylim(0,4) +
+  labs(
+    y = expression("Total mass (kg"~"ha"^{-1}~")"), 
+    x = "Treatment",
+    subtitle = "Total pesticide mass"
+    ) +
+  theme_bw() +
+  scale_fill_manual(values=c("turquoise3","tomato2"), 
+                    name = NULL) +
+      geom_errorbar(aes(ymin=mean-se,
+                        ymax=mean+se),
+                    width=.2,                    # Width of the error bars
+                    position=position_dodge(.9)) +
+  theme(strip.text.x = element_text(size = 12, 
+                                    color = "black", 
+                                    face = "bold.italic"), 
+        legend.position = "bottom", 
+        # axis.text.x = element_blank(), 
+        axis.title.x = element_blank()
+        ) +
+      facet_wrap(~Year, ncol = 4)  # Ensure it matches `p1`
+
+
+ggarrange(p1,p2,
+          ncol = 2, nrow = 1,  
+          common.legend = TRUE,  # Use a common legend
+          legend = "bottom", 
+          labels = c("A", "B"),
+          widths = c(2, 1))  # Make first column twice as wide
+
+ggsave(filename = "sym_link_pesticide_data/plots/pesticide_risk_plots/new_plots/fig_PLI_total_AI_mass.png",
+       width = 10, height = 3.5)
+
+
+```
+
